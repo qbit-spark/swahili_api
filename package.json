@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "server": "nodemon server.js",
-    "build": "node scripts/build.js",
     "test": "jest",
     "seed": "node scripts/seedAdmin.js",
     "seed:admin:prod": "cross-env NODE_ENV=production node scripts/seedAdmin.js",
