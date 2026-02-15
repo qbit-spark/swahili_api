@@ -15,17 +15,24 @@ class NotificationService {
     });
   }
 
-  async sendPushNotification(pushToken, message) {
+  async sendPushNotification(pushToken, message, imageUrl = null) {
     if (!Expo.isExpoPushToken(pushToken)) {
       throw new Error('Invalid Expo push token');
     }
 
-    const chunks = this.expo.chunkPushNotifications([{
+    const notificationContent = {
       to: pushToken,
       sound: 'default',
       body: message,
       data: { type: 'order_created' }
-    }]);
+    };
+
+    // Add image if provided
+    if (imageUrl) {
+      notificationContent.image = imageUrl;
+    }
+
+    const chunks = this.expo.chunkPushNotifications([notificationContent]);
 
     for (const chunk of chunks) {
       try {
