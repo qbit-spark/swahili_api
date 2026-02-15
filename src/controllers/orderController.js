@@ -175,7 +175,8 @@ exports.createOrder = async (req, res) => {
       pushNotifications.push(
         notificationService.sendPushNotification(
           shopOwner.expoPushToken,
-          orderNotifications.shop.message
+          orderNotifications.shop.message,
+          product.images[0]  // ✅ Send product image to seller
         )
       );
     }
@@ -185,7 +186,8 @@ exports.createOrder = async (req, res) => {
       pushNotifications.push(
         notificationService.sendPushNotification(
           buyer.expoPushToken,
-          orderNotifications.buyer.message
+          orderNotifications.buyer.message,
+          product.images[0]  // ✅ Optional: send product image to buyer too
         )
       );
     }
