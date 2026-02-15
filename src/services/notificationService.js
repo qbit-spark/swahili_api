@@ -27,9 +27,11 @@ class NotificationService {
       data: { type: 'order_created' }
     };
 
-    // Add image if provided
+    // ✅ CORRECT: Add image using richContent field
     if (imageUrl) {
-      notificationContent.image = imageUrl;
+      notificationContent.richContent = {
+        image: imageUrl
+      };
     }
 
     const chunks = this.expo.chunkPushNotifications([notificationContent]);
