@@ -168,34 +168,34 @@ exports.createOrder = async (req, res) => {
     ]);
 
     // Send push notifications if users have expo tokens
-    const pushNotifications = [];
+ const pushNotifications = [];
 
-    if (shopOwner?.expoPushToken) {
-      console.log('📱 Sending push to shop owner:', shopOwner.username);
-      pushNotifications.push(
-        notificationService.sendPushNotification(
-          shopOwner.expoPushToken,
-          orderNotifications.shop.message,
-          product.images[0]  // ✅ Send product image to seller
-        )
-      );
-    }
+if (shopOwner?.expoPushToken) {
+  console.log('📱 Sending push to shop owner:', shopOwner.username);
+  pushNotifications.push(
+    notificationService.sendPushNotification(
+      shopOwner.expoPushToken,
+      orderNotifications.shop.message,
+      product.images[0]  // ✅ Send product image to seller
+    )
+  );
+}
 
-    if (buyer?.expoPushToken) {
-      console.log('📱 Sending push to buyer:', buyer.username);
-      pushNotifications.push(
-        notificationService.sendPushNotification(
-          buyer.expoPushToken,
-          orderNotifications.buyer.message,
-          product.images[0]  // ✅ Optional: send product image to buyer too
-        )
-      );
-    }
+if (buyer?.expoPushToken) {
+  console.log('📱 Sending push to buyer:', buyer.username);
+  pushNotifications.push(
+    notificationService.sendPushNotification(
+      buyer.expoPushToken,
+      orderNotifications.buyer.message,
+      product.images[0]  // ✅ Optional: send product image to buyer too
+    )
+  );
+}
 
-    // Send push notifications concurrently if any exist
-    if (pushNotifications.length > 0) {
-      await Promise.all(pushNotifications);
-    }
+// Send push notifications concurrently if any exist
+if (pushNotifications.length > 0) {
+  await Promise.all(pushNotifications);
+}
 
     // Fetch the complete order with populated fields for response
     const populatedOrder = await Order.findById(order._id)
