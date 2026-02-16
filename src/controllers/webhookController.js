@@ -10,10 +10,10 @@ const PaymentService = require('../services/paymentService');
  */
 exports.handleZenopayCallback = async (req, res) => {
     try {
-        console.log('🔔 WEBHOOK RECEIVED');
-        console.log('📋 HEADERS:', JSON.stringify(req.headers, null, 2));
-        console.log('📋 RAW HEADERS:', req.rawHeaders);
-        console.log('📦 BODY:', JSON.stringify(req.body, null, 2));
+        // console.log('🔔 WEBHOOK RECEIVED');
+        // console.log('📋 HEADERS:', JSON.stringify(req.headers, null, 2));
+        // console.log('📋 RAW HEADERS:', req.rawHeaders);
+        // console.log('📦 BODY:', JSON.stringify(req.body, null, 2));
 
         const apiKey = req.headers['x-api-key'];
 
@@ -24,7 +24,7 @@ exports.handleZenopayCallback = async (req, res) => {
                 console.error('🚫 Invalid API key');
                 return res.status(401).json({ error: 'Unauthorized' });
             }
-            console.log('✅ API key verified');
+            // console.log('✅ API key verified');
         } else {
             // No API key - fall back to API verification
             console.warn('⚠️ No x-api-key header received (SDK issue?)');
@@ -58,7 +58,7 @@ exports.handleZenopayCallback = async (req, res) => {
         }
 
         // ✅ ALWAYS verify with API (regardless of header presence)
-        console.log('🔍 Verifying with ZenoPay API...');
+        // console.log('🔍 Verifying with ZenoPay API...');
         const verifyResult = await PaymentService.checkPaymentStatus(order_id);
         const actualStatus = verifyResult.message?.payment_status;
 
@@ -78,7 +78,7 @@ exports.handleZenopayCallback = async (req, res) => {
             });
         }
 
-        console.log('✅ Payment verified - updating order');
+        // console.log('✅ Payment verified - updating order');
 
         // Update order
         order.paymentStatus = 'completed';
@@ -88,7 +88,7 @@ exports.handleZenopayCallback = async (req, res) => {
         order.paymentDetails.completedAt = new Date();
         await order.save();
 
-        console.log(`✅ Order ${order.orderNumber} completed`);
+        // console.log(`✅ Order ${order.orderNumber} completed`);
         
         try {
             // ✅ FIXED: Get shop owner from shop.owner
@@ -126,7 +126,7 @@ exports.handleZenopayCallback = async (req, res) => {
                 );
 
                 if (buyer.expoPushToken) {
-                    console.log('📱 Sending push to buyer:', buyer.username);
+                    // console.log('📱 Sending push to buyer:', buyer.username);
                     notifications.push(
                         notificationService.sendPushNotification(
                             buyer.expoPushToken,
@@ -146,7 +146,7 @@ exports.handleZenopayCallback = async (req, res) => {
                 );
 
                 if (shopOwner.expoPushToken) {
-                    console.log('📱 Sending push to shop owner:', shopOwner.username);
+                    // console.log('📱 Sending push to shop owner:', shopOwner.username);
                     notifications.push(
                         notificationService.sendPushNotification(
                             shopOwner.expoPushToken,
@@ -161,7 +161,7 @@ exports.handleZenopayCallback = async (req, res) => {
             }
 
             await Promise.allSettled(notifications);
-            console.log('✅ Notifications sent');
+            // console.log('✅ Notifications sent');
         } catch (notifError) {
             console.error('Error sending notifications:', notifError);
         }
@@ -203,7 +203,7 @@ exports.checkPaymentStatus = async (req, res) => {
             order.paymentDetails.transactionId
         );
 
-        console.log('Payment status check result:', statusResult);
+        // console.log('Payment status check result:', statusResult);
 
         // Update order if status has changed
         if (statusResult.success) {
@@ -216,7 +216,7 @@ exports.checkPaymentStatus = async (req, res) => {
                 order.paymentDetails.completedAt = new Date();
                 await order.save();
 
-                console.log(`✅ Order ${order.orderNumber} updated to completed`);
+                // console.log(`✅ Order ${order.orderNumber} updated to completed`);
             }
         }
 
@@ -244,7 +244,7 @@ exports.checkPaymentStatus = async (req, res) => {
  * Test endpoint to verify webhook is accessible
  */
 exports.testWebhook = (req, res) => {
-    console.log('Webhook test endpoint hit');
+    // console.log('Webhook test endpoint hit');
     res.json({
         success: true,
         message: 'Webhook endpoint is accessible',

@@ -20,10 +20,10 @@ const WishlistReminderService = require('./src/services/wishlistReminderService'
 async function initializeApp() {
     try {
         await connectDB();
-        console.log('Database connected successfully');
+        // console.log('Database connected successfully');
 
         await WishlistReminderService.sendWishlistReminders();
-        console.log('Wishlist reminders sent successfully');
+        // console.log('Wishlist reminders sent successfully');
     } catch (error) {
         console.error('Initialization error:', error);
         process.exit(1);

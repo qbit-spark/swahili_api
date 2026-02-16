@@ -96,7 +96,7 @@ exports.createOrder = async (req, res) => {
         shippingAddress
       });
 
-      console.log("paymentResults:", paymentResult);
+      // console.log("paymentResults:", paymentResult);
 
       if (!paymentResult.success) {
         return res.status(400).json({
@@ -139,7 +139,7 @@ exports.createOrder = async (req, res) => {
     const orderNotifications = {
       shop: {
         message: `New order #${order.orderNumber} for ${product.name}`,
-        userId: product.shop.owner 
+        userId: product.shop.owner
       },
       buyer: {
         message: `Order #${order.orderNumber} placed successfully! We'll notify you about updates.`,
@@ -149,7 +149,7 @@ exports.createOrder = async (req, res) => {
 
     // ✅ FIXED: Fetch the correct users
     const [shopOwner, buyer] = await Promise.all([
-      User.findById(product.shop.owner).select('username email expoPushToken'), 
+      User.findById(product.shop.owner).select('username email expoPushToken'),
       User.findById(userId).select('username email expoPushToken')
     ]);
 
@@ -168,34 +168,34 @@ exports.createOrder = async (req, res) => {
     ]);
 
     // Send push notifications if users have expo tokens
- const pushNotifications = [];
+    const pushNotifications = [];
 
-if (shopOwner?.expoPushToken) {
-  console.log('📱 Sending push to shop owner:', shopOwner.username);
-  pushNotifications.push(
-    notificationService.sendPushNotification(
-      shopOwner.expoPushToken,
-      orderNotifications.shop.message,
-      product.images[0]  // ✅ Send product image to seller
-    )
-  );
-}
+    if (shopOwner?.expoPushToken) {
+      // console.log('📱 Sending push to shop owner:', shopOwner.username);
+      pushNotifications.push(
+        notificationService.sendPushNotification(
+          shopOwner.expoPushToken,
+          orderNotifications.shop.message,
+          product.images[0]
+        )
+      );
+    }
 
-if (buyer?.expoPushToken) {
-  console.log('📱 Sending push to buyer:', buyer.username);
-  pushNotifications.push(
-    notificationService.sendPushNotification(
-      buyer.expoPushToken,
-      orderNotifications.buyer.message,
-      product.images[0]  // ✅ Optional: send product image to buyer too
-    )
-  );
-}
+    if (buyer?.expoPushToken) {
+      // console.log('📱 Sending push to buyer:', buyer.username);
+      pushNotifications.push(
+        notificationService.sendPushNotification(
+          buyer.expoPushToken,
+          orderNotifications.buyer.message,
+          product.images[0]
+        )
+      );
+    }
 
-// Send push notifications concurrently if any exist
-if (pushNotifications.length > 0) {
-  await Promise.all(pushNotifications);
-}
+    // Send push notifications concurrently if any exist
+    if (pushNotifications.length > 0) {
+      await Promise.all(pushNotifications);
+    }
 
     // Fetch the complete order with populated fields for response
     const populatedOrder = await Order.findById(order._id)
@@ -362,8 +362,8 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    console.log('🔍 Order shop owner:', order.shop.owner);
-    console.log('🔍 Current user:', req.user._id);
+    // console.log('🔍 Order shop owner:', order.shop.owner);
+    // console.log('🔍 Current user:', req.user._id);
 
     // Check authorization (only shop owner or admin can update status)
     const isShopOwner = order.shop.owner.equals(req.user._id);
@@ -378,7 +378,7 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    console.log('✅ Authorization check passed');
+    // console.log('✅ Authorization check passed');
 
     // Validate status transition
     if (!isValidStatusTransition(order.status, status)) {
@@ -413,7 +413,7 @@ exports.updateOrderStatus = async (req, res) => {
         );
       }));
 
-      console.log('📦 Stock restored for cancelled order');
+      // console.log('📦 Stock restored for cancelled order');
     } else if (status === 'delivered' && order.status !== 'delivered') {
       // Credit shop wallet when order is delivered
       const shop = await Shop.findById(order.shop._id);
@@ -426,7 +426,7 @@ exports.updateOrderStatus = async (req, res) => {
         shop.metrics.totalRevenue = (shop.metrics.totalRevenue || 0) + orderRevenue;
         await shop.save();
 
-        console.log(`💰 Credited ${orderRevenue} to shop wallet`);
+        // console.log(`💰 Credited ${orderRevenue} to shop wallet`);
       }
     }
 

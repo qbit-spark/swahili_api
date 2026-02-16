@@ -22,7 +22,7 @@ class PaymentService {
       const result = await this.zenoPay.Pay(paymentOptions);
       return result;
     } catch (error) {
-      console.log("An error occured while making payment:",error)
+      // console.log("An error occured while making payment:",error)
       throw new Error(`Payment processing failed: ${error.message}`);
     }
   }
