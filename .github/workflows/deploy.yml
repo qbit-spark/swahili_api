@@ -20,4 +20,4 @@ jobs:
             cd ${{ secrets.SERVER_PATH }}
             git pull origin main
             npm install --production
-            pm2 restart api
+            pm2 restart swahili-api
