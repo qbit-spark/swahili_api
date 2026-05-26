@@ -34,7 +34,7 @@ async function initializeApp() {
 initializeApp().catch(console.error);
 
 // Init Middleware
-app.use(express.json({ extended: false }));
+// app.use(express.json({ extended: false }));
 app.use(helmet()); // Security headers
 app.use(cors());
 app.use(compression()); // Compress responses
@@ -97,7 +97,7 @@ app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
 process.on('unhandledRejection', (err) => {
     console.error('Unhandled Promise Rejection:', err);
     // In production i hafta crash the process
-    process.exit(1);
+    // process.exit(1);
 });
 
 

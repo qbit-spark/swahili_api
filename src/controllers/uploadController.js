@@ -1,23 +1,13 @@
-const { uploadToCloudinary } = require('../config/cloudinary');
-const fs = require('fs').promises;
+const { uploadToCloudinary, uploadWithConcurrencyLimit, deleteTempFile } = require('../config/cloudinary');
 
 exports.uploadImage = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        errors: ['No file uploaded']
-      });
+      return res.status(400).json({ success: false, data: null, errors: ['No file uploaded'] });
     }
 
-    // console.log('File received:', req.file);
-
-    // Upload to Cloudinary
     const imageUrl = await uploadToCloudinary(req.file, req.query.folder || 'general');
-
-    // Delete the temporary file
-    await fs.unlink(req.file.path);
+    await deleteTempFile(req.file.path);
 
     res.json({
       success: true,
@@ -30,75 +20,46 @@ exports.uploadImage = async (req, res) => {
       errors: []
     });
   } catch (err) {
-    console.error('Upload error:', err);
-
-    // If there was an error, try to delete the temporary file
-    if (req.file) {
-      try {
-        await fs.unlink(req.file.path);
-      } catch (unlinkErr) {
-        console.error('Error deleting temporary file:', unlinkErr);
-      }
-    }
-
-    res.status(500).json({
-      success: false,
-      data: null,
-      errors: [err.message]
-    });
+    await deleteTempFile(req.file?.path);
+    res.status(500).json({ success: false, data: null, errors: [err.message] });
   }
 };
 
 exports.uploadMultipleImages = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        errors: ['No files uploaded']
+      return res.status(400).json({ success: false, data: null, errors: ['No files uploaded'] });
+    }
+
+    const folder = req.query.folder || 'general';
+    const { results, errors } = await uploadWithConcurrencyLimit(req.files, folder, 3);
+
+    // Partial success — some uploaded, some failed
+    if (errors.length > 0 && results.length > 0) {
+      return res.status(207).json({
+        success: true,
+        data: { images: results },
+        errors: errors.map(e => `${e.file}: ${e.error}`)
       });
     }
 
-    // console.log('Files received:', req.files); 
-
-    const uploadPromises = req.files.map(async (file) => {
-      const imageUrl = await uploadToCloudinary(file, req.query.folder || 'general');
-      await fs.unlink(file.path);
-      return {
-        imageUrl,
-        originalName: file.originalname,
-        mimeType: file.mimetype,
-        size: file.size
-      };
-    });
-
-    const uploadedImages = await Promise.all(uploadPromises);
-
-    res.json({
-      success: true,
-      data: {
-        images: uploadedImages
-      },
-      errors: []
-    });
-  } catch (err) {
-    console.error('Upload error:', err); // Add this for debugging
-
-    // Clean up any temporary files
-    if (req.files) {
-      for (const file of req.files) {
-        try {
-          await fs.unlink(file.path);
-        } catch (unlinkErr) {
-          console.error('Error deleting temporary file:', unlinkErr);
-        }
-      }
+    // Total failure
+    if (errors.length > 0 && results.length === 0) {
+      return res.status(500).json({
+        success: false,
+        data: null,
+        errors: errors.map(e => `${e.file}: ${e.error}`)
+      });
     }
 
-    res.status(500).json({
-      success: false,
-      data: null,
-      errors: [err.message]
-    });
+    // All succeeded
+    res.json({ success: true, data: { images: results }, errors: [] });
+
+  } catch (err) {
+    // Safety net — clean up any remaining temp files
+    if (req.files) {
+      await Promise.allSettled(req.files.map(f => deleteTempFile(f.path)));
+    }
+    res.status(500).json({ success: false, data: null, errors: [err.message] });
   }
 };

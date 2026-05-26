@@ -1,24 +1,38 @@
 const Product = require('../models/Product');
 const Shop = require('../models/Shop');
+const ProductView = require('../models/ProductView');
 
-const isNewView = async (product, ip, userId) => {
-  // Check if this IP or user has viewed in the last 24 hours
+const isNewView = async (productId, ip, userId) => {
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  
-  const existingView = await Product.findOne({
-    _id: product._id,
-    'views.history': {
-      $elemMatch: {
-        $or: [
-          { ip: ip },
-          { user: userId }
-        ],
-        timestamp: { $gte: twentyFourHoursAgo }
-      }
-    }
-  });
 
-  return !existingView;
+  const query = {
+    product: productId,
+    timestamp: { $gte: twentyFourHoursAgo },
+    $or: [{ ip }]
+  };
+
+  // Only add user condition if we actually have a userId
+  if (userId) query.$or.push({ user: userId });
+
+  const existing = await ProductView.findOne(query);
+  return !existing;
+};
+
+const trackView = async (productId, ip, userId) => {
+  // Always increment total views atomically
+  await Product.findByIdAndUpdate(productId, { $inc: { 'views.total': 1 } });
+
+  // Only count unique + record history if genuinely new
+  if (await isNewView(productId, ip, userId)) {
+    await Product.findByIdAndUpdate(productId, { $inc: { 'views.unique': 1 } });
+
+    // Record in separate collection (TTL handles cleanup automatically)
+    await ProductView.create({
+      product: productId,
+      ip,
+      user: userId || null
+    });
+  }
 };
 
 exports.createProduct = async (req, res) => {
@@ -135,44 +149,21 @@ exports.getProductById = async (req, res) => {
     const product = await Product.findById(req.params.id)
       .populate('category', 'name')
       .populate('shop', 'name');
-    
+
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        errors: ['Product not found'],
-        data: null
-      });
+      return res.status(404).json({ success: false, errors: ['Product not found'], data: null });
     }
 
-    // Track view
+    // Fire-and-forget — don't block the response on view tracking
     const ip = req.ip;
     const userId = req.user ? req.user._id : null;
-    
-    // Increment total views
-    product.views.total += 1;
+    trackView(product._id, ip, userId).catch(err =>
+      console.error('View tracking error:', err)
+    );
 
-    // Check if this is a new view (not from same IP/user in last 24h)
-    if (await isNewView(product, ip, userId)) {
-      product.views.unique += 1;
-      product.views.history.push({
-        ip: ip,
-        user: userId
-      });
-    }
-
-    await product.save();
-    
-    res.json({
-      success: true,
-      data: { product },
-      errors: []
-    });
+    res.json({ success: true, data: { product }, errors: [] });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      errors: [err.message],
-      data: null
-    });
+    res.status(500).json({ success: false, errors: [err.message], data: null });
   }
 };
 
@@ -251,46 +242,22 @@ exports.trackProductView = async (req, res) => {
     const userId = req.user ? req.user._id : null;
 
     const product = await Product.findById(productId);
-    
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        errors: ['Product not found'],
-        data: null
-      });
+      return res.status(404).json({ success: false, errors: ['Product not found'], data: null });
     }
 
-    // Increment total views
-    product.views.total += 1;
+    await trackView(productId, ip, userId);
 
-    // Check if this is a new view
-    if (await isNewView(product, ip, userId)) {
-      product.views.unique += 1;
-      product.views.history.push({
-        ip: ip,
-        user: userId
-      });
-    }
-
-    await product.save();
+    // Re-fetch updated counts
+    const updated = await Product.findById(productId).select('views.total views.unique');
 
     res.json({
       success: true,
-      data: {
-        views: {
-          total: product.views.total,
-          unique: product.views.unique
-        }
-      },
+      data: { views: { total: updated.views.total, unique: updated.views.unique } },
       errors: []
     });
-
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      errors: [err.message],
-      data: null
-    });
+    res.status(500).json({ success: false, errors: [err.message], data: null });
   }
 };
 

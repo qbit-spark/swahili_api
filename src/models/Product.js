@@ -51,18 +51,8 @@ const ProductSchema = new mongoose.Schema({
       type: Number,
       default: 0
     },
-    history: [{
-      ip: String,
-      timestamp: {
-        type: Date,
-        default: Date.now
-      },
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: false
-      }
-    }]
+    // We won't store the full history here to avoid bloating the product document
+    // Instead, we'll have a separate ProductView collection for tracking unique views with TTL
   },
   createdAt: {
     type: Date,
@@ -74,7 +64,7 @@ ProductSchema.set('toJSON', {
   transform: (doc, ret) => {
     delete ret.__v;
     if (ret.views) {
-      delete ret.views.history;
+      // delete ret.views.history;
     }
     return ret;
   }
