@@ -43,7 +43,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger); // Request logging
 app.use(paginateResults);
 app.use(securityMiddleware);
-
+app.set('trust proxy', 1); // Trust first proxy for rate limiting and secure cookies
 app.use('/api-docs', swagger.serve, swagger.setup);
 
 // Rate limiting
