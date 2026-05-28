@@ -182,6 +182,7 @@ router.post('/', auth, productController.createProduct);
 
 // Get all products (public route)
 router.get('/', productController.getAllProducts);
+router.get("/share/products/:id", productController.getProductSharePage);
 
 
 /**
@@ -254,7 +255,7 @@ router.get('/', productController.getAllProducts);
  *         description: Product not found
  */
 router.get('/:id', productController.getProductById);
-
+    
 // Update a product (protected route)
 router.put('/:id', auth, productController.updateProduct);
 

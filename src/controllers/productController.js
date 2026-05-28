@@ -294,3 +294,74 @@ exports.getProductViewStats = async (req, res) => {
     });
   }
 };
+
+exports.getProductSharePage = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate("category", "name")
+      .populate("shop", "name");
+
+    if (!product) {
+      return res.status(404).send("Product not found");
+    }
+
+    const baseUrl = "https://swahilifamily.com";
+
+    // product image
+    let image = product.images?.[0];
+
+    // fallback image
+    if (!image) {
+      image = `${baseUrl}/default-product.png`;
+    }
+
+    // convert relative image → absolute
+    if (image && !image.startsWith("http")) {
+      image = `${baseUrl}${image}`;
+    }
+
+    const title = `${product.name} | Swahili Family`;
+
+    const description = product.description
+      ? product.description.slice(0, 180)
+      : `Buy ${product.name} for TZS ${product.price} on Swahili Family`;
+
+    const productUrl = `${baseUrl}/share/products/${product._id}`;
+
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+          <title>${title}</title>
+
+          <!-- Open Graph -->
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content="${title}" />
+          <meta property="og:description" content="${description}" />
+          <meta property="og:image" content="${image}" />
+          <meta property="og:url" content="${productUrl}" />
+
+          <!-- Twitter -->
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content="${title}" />
+          <meta name="twitter:description" content="${description}" />
+          <meta name="twitter:image" content="${image}" />
+
+          <!-- Redirect to frontend -->
+          <meta http-equiv="refresh" content="0; url=${baseUrl}/product/${product._id}" />
+        </head>
+
+        <body>
+          Redirecting...
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).send("Server Error");
+  }
+};
