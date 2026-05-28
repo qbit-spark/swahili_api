@@ -182,7 +182,7 @@ router.post('/', auth, productController.createProduct);
 
 // Get all products (public route)
 router.get('/', productController.getAllProducts);
-router.get("/share/products/:id", productController.getProductSharePage);
+router.get("/share/:id", productController.getProductSharePage);
 
 
 /**
