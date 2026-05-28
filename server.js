@@ -1,4 +1,6 @@
 require('dotenv').config();
+require("./instrument.js");
+const Sentry = require("@sentry/node");
 const express = require('express');
 const connectDB = require('./src/config/db');
 const cors = require('cors');
@@ -68,6 +70,9 @@ app.use('/api/v1/wishlist', require('./src/routes/wishlist'));
 app.use('/api/v1/announcements', require('./src/routes/announcements'));
 app.use('/api/v1/webhooks', webhookRoutes);
 app.use('/api/v1/withdrawals', require('./src/routes/withdrawals'));
+
+
+Sentry.setupExpressErrorHandler(app);
 
 
 // Error handling
