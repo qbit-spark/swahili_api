@@ -326,7 +326,7 @@ exports.getProductSharePage = async (req, res) => {
       ? product.description.slice(0, 180)
       : `Buy ${product.name} for TZS ${product.price} on Swahili Family`;
 
-    const productUrl = `${baseUrl}/share/products/${product._id}`;
+    const productUrl = `https://swahilifamily.com/p/${product._id}`;
 
     res.status(200).send(`
       <!DOCTYPE html>

@@ -70,7 +70,7 @@ app.use('/api/v1/wishlist', require('./src/routes/wishlist'));
 app.use('/api/v1/announcements', require('./src/routes/announcements'));
 app.use('/api/v1/webhooks', webhookRoutes);
 app.use('/api/v1/withdrawals', require('./src/routes/withdrawals'));
-
+app.get('/p/:id', require('./src/controllers/productController').getProductSharePage);
 
 Sentry.setupExpressErrorHandler(app);
 
