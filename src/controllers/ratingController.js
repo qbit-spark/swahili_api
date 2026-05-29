@@ -7,58 +7,93 @@ exports.createRating = async (req, res) => {
     const { productId, orderId, rating, review, images } = req.body;
     const userId = req.user._id;
 
-    // Verify order exists and belongs to user
+    console.log("⭐ [Rating] Incoming request:", {
+      productId,
+      orderId,
+      userId,
+      rating,
+    });
+
+    // 1. Get order (ONLY check ownership + delivery first)
     const order = await Order.findOne({
       _id: orderId,
       user: userId,
-      'items.product': productId,
-      status: 'delivered'
+      status: 'delivered',
     });
 
     if (!order) {
+      console.log("❌ [Rating] Order not found or not delivered:", orderId);
+
       return res.status(400).json({
         success: false,
         errors: ['Can only rate products from delivered orders'],
-        data: null
+        data: null,
       });
     }
 
-    // Check if user already rated this product
+    // 2. Validate product exists inside order (safe array check)
+    const itemExists = order.items.some(
+      (item) =>
+        item.product?.toString?.() === productId.toString()
+    );
+
+    if (!itemExists) {
+      console.log("❌ [Rating] Product not found in order:", {
+        productId,
+        orderItems: order.items.map((i) => i.product),
+      });
+
+      return res.status(400).json({
+        success: false,
+        errors: ['Product not found in this order'],
+        data: null,
+      });
+    }
+
+    // 3. Prevent duplicate rating
     const existingRating = await Rating.findOne({
       user: userId,
-      product: productId
+      product: productId,
+      order: orderId,
     });
 
     if (existingRating) {
+      console.log("⚠️ [Rating] Duplicate rating attempt");
+
       return res.status(400).json({
         success: false,
         errors: ['You have already rated this product'],
-        data: null
+        data: null,
       });
     }
 
+    // 4. Create rating
     const newRating = new Rating({
       user: userId,
       product: productId,
       order: orderId,
       rating,
       review,
-      images
+      images: images || [],
     });
 
     await newRating.save();
 
-    res.status(201).json({
+    console.log("✅ [Rating] Created successfully:", newRating._id);
+
+    return res.status(201).json({
       success: true,
       data: { rating: newRating },
-      errors: []
+      errors: [],
     });
 
   } catch (err) {
-    res.status(500).json({
+    console.error("💥 [Rating] Fatal error:", err);
+
+    return res.status(500).json({
       success: false,
       errors: [err.message],
-      data: null
+      data: null,
     });
   }
 };
