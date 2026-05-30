@@ -394,9 +394,9 @@ exports.updateOrderStatus = async (req, res) => {
       status,
       updatedAt: Date.now(),
       statusHistory: [
-        ...order.statusHistory || [],
+        ...(order.statusHistory || []),
         {
-          status: order.status,
+          status, // store NEW status
           timestamp: new Date(),
           updatedBy: req.user._id
         }
@@ -405,28 +405,62 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Special handling for specific status transitions
     if (status === 'cancelled') {
-      // If order is cancelled, restore product stock
-      await Promise.all(order.items.map(async (item) => {
-        await Product.findByIdAndUpdate(
-          item.product._id,
-          { $inc: { stock: item.quantity } }
-        );
-      }));
+      // Restore stock when order is cancelled
+      await Promise.all(
+        order.items.map(async (item) => {
+          await Product.findByIdAndUpdate(
+            item.product._id,
+            {
+              $inc: { stock: item.quantity }
+            }
+          );
+        })
+      );
 
-      // console.log('📦 Stock restored for cancelled order');
     } else if (status === 'delivered' && order.status !== 'delivered') {
-      // Credit shop wallet when order is delivered
+
       const shop = await Shop.findById(order.shop._id);
+
       if (shop) {
+
         if (!shop.wallet) {
-          shop.wallet = { currentBalance: 0, lockedBalance: 0 };
+          shop.wallet = {
+            currentBalance: 0,
+            lockedBalance: 0,
+            currency: 'TZS'
+          };
         }
-        const orderRevenue = order.amounts.subtotal || order.amounts.total;
+
+        if (!shop.metrics) {
+          shop.metrics = {
+            totalProducts: 0,
+            totalOrders: 0,
+            totalRevenue: 0
+          };
+        }
+
+        const orderRevenue =
+          Number(order.amounts?.subtotal || order.amounts?.total || 0);
+
+        // Credit wallet
         shop.wallet.currentBalance += orderRevenue;
-        shop.metrics.totalRevenue = (shop.metrics.totalRevenue || 0) + orderRevenue;
+
+        // Update metrics
+        shop.metrics.totalOrders =
+          (shop.metrics.totalOrders || 0) + 1;
+
+        shop.metrics.totalRevenue =
+          (shop.metrics.totalRevenue || 0) + orderRevenue;
+
         await shop.save();
 
-        // console.log(`💰 Credited ${orderRevenue} to shop wallet`);
+        console.log(
+          `💰 Credited ${orderRevenue} to shop wallet`
+        );
+
+        console.log(
+          `📊 Shop metrics updated: orders=${shop.metrics.totalOrders}, revenue=${shop.metrics.totalRevenue}`
+        );
       }
     }
 

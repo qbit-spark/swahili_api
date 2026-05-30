@@ -68,6 +68,9 @@ const auth = require('../middleware/auth');
  *   description: Products management  endpoints
  */
 
+router.get("/share/:id", productController.getProductSharePage);
+
+
 /**
  * @swagger
  * /api/v1/products:
@@ -182,7 +185,6 @@ router.post('/', auth, productController.createProduct);
 
 // Get all products (public route)
 router.get('/', productController.getAllProducts);
-router.get("/share/:id", productController.getProductSharePage);
 
 
 /**

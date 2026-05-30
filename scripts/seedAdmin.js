@@ -6,225 +6,262 @@ const Category = require('../src/models/Category');
 
 mongoose.set('strictQuery', false);
 
+/**
+ * ADMIN
+ */
 const adminUser = {
-    username: 'admin',
-    email: 'admin@example.com',
-    password: 'admin123',
-    userType: 'ADMIN',
-    status: 'active',
-    profile: {
-        firstName: 'System',
-        lastName: 'Administrator'
-    }
+  username: 'admin',
+  email: 'admin@swahilifamily.com',
+  password: 'admin123',
+  userType: 'ADMIN',
+  status: 'active',
+  profile: {
+    firstName: 'System',
+    lastName: 'Administrator'
+  }
 };
 
+/**
+ * PARENT CATEGORIES
+ * NOTE: slug is optional because schema auto-generates it
+ */
 const initialCategories = [
-    {
-        name: 'Electronics',
-        description: 'Electronic devices and accessories',
-        image: 'https://res.cloudinary.com/demo/image/upload/electronics.jpg',
-        slug: 'electronics',
-        isActive: true,
-        displayOrder: 1,
-        attributes: [
-            { name: 'Brand', type: 'text', required: true },
-            { name: 'Model', type: 'text', required: true },
-            { name: 'Condition', type: 'select', required: true, options: ['New', 'Used', 'Refurbished'] }
-        ]
-    },
-    {
-        name: 'Fashion',
-        description: 'Clothing, shoes, and accessories',
-        image: 'https://res.cloudinary.com/demo/image/upload/fashion.jpg',
-        slug: 'fashion',
-        isActive: true,
-        displayOrder: 2,
-        attributes: [
-            { name: 'Size', type: 'select', required: true, options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
-            { name: 'Color', type: 'text', required: true },
-            { name: 'Material', type: 'text', required: true }
-        ]
-    },
-    {
-        name: 'Home & Garden',
-        description: 'Furniture, decor, and gardening supplies',
-        image: 'https://res.cloudinary.com/demo/image/upload/home.jpg',
-        slug: 'home-garden',
-        isActive: true,
-        displayOrder: 3,
-        attributes: [
-            { name: 'Material', type: 'text', required: true },
-            { name: 'Dimensions', type: 'text', required: true }
-        ]
-    },
-    {
-        name: 'Books',
-        description: 'Books, textbooks, and educational materials',
-        image: 'https://res.cloudinary.com/demo/image/upload/books.jpg',
-        slug: 'books',
-        isActive: true,
-        displayOrder: 4,
-        attributes: [
-            { name: 'ISBN', type: 'text', required: true },
-            { name: 'Author', type: 'text', required: true },
-            { name: 'Format', type: 'select', required: true, options: ['Paperback', 'Hardcover', 'Digital'] }
-        ]
-    },
-    {
-        name: 'Sports & Fitness',
-        description: 'Sports equipment and fitness gear',
-        image: 'https://res.cloudinary.com/demo/image/upload/sports.jpg',
-        slug: 'sports-fitness',
-        isActive: true,
-        displayOrder: 5,
-        attributes: [
-            { name: 'Type', type: 'text', required: true },
-            { name: 'Size', type: 'text', required: false }
-        ]
-    },
-    {
-        name: 'Beauty & Health',
-        description: 'Beauty products and health supplies',
-        image: 'https://res.cloudinary.com/demo/image/upload/beauty.jpg',
-        slug: 'beauty-health',
-        isActive: true,
-        displayOrder: 6,
-        attributes: [
-            { name: 'Brand', type: 'text', required: true },
-            { name: 'Volume/Weight', type: 'text', required: true },
-            { name: 'Expiry Date', type: 'date', required: true }
-        ]
-    },
-    {
-        name: 'Automotive',
-        description: 'Car parts and accessories',
-        image: 'https://res.cloudinary.com/demo/image/upload/automotive.jpg',
-        slug: 'automotive',
-        isActive: true,
-        displayOrder: 7,
-        attributes: [
-            { name: 'Make', type: 'text', required: true },
-            { name: 'Model', type: 'text', required: true },
-            { name: 'Year', type: 'number', required: true }
-        ]
-    },
-    {
-        name: 'Toys & Games',
-        description: 'Toys, games, and entertainment items',
-        image: 'https://res.cloudinary.com/demo/image/upload/toys.jpg',
-        slug: 'toys-games',
-        isActive: true,
-        displayOrder: 8,
-        attributes: [
-            { name: 'Age Range', type: 'text', required: true },
-            { name: 'Category', type: 'select', required: true, options: ['Educational', 'Action Figures', 'Board Games', 'Outdoor'] }
-        ]
-    },
-    {
-        name: 'Food & Beverages',
-        description: 'Food items and beverages',
-        image: 'https://res.cloudinary.com/demo/image/upload/food.jpg',
-        slug: 'food-beverages',
-        isActive: true,
-        displayOrder: 9,
-        attributes: [
-            { name: 'Type', type: 'select', required: true, options: ['Fresh', 'Packaged', 'Frozen'] },
-            { name: 'Weight', type: 'text', required: true },
-            { name: 'Expiry Date', type: 'date', required: true }
-        ]
-    },
-    {
-        name: 'Art & Crafts',
-        description: 'Art supplies and craft materials',
-        image: 'https://res.cloudinary.com/demo/image/upload/art.jpg',
-        slug: 'art-crafts',
-        isActive: true,
-        displayOrder: 10,
-        attributes: [
-            { name: 'Medium', type: 'text', required: true },
-            { name: 'Material', type: 'text', required: true }
-        ]
-    }
+  {
+    name: 'Electronics',
+    description: 'Electronic devices and accessories',
+    image: 'https://res.cloudinary.com/demo/image/upload/electronics.jpg',
+    isActive: true,
+    displayOrder: 1,
+    attributes: [
+      { name: 'Brand', type: 'text', required: true },
+      { name: 'Model', type: 'text', required: true },
+      { name: 'Condition', type: 'select', required: true, options: ['New', 'Used', 'Refurbished'] }
+    ]
+  },
+  {
+    name: 'Fashion',
+    description: 'Clothing, shoes, and accessories',
+    image: 'https://res.cloudinary.com/demo/image/upload/fashion.jpg',
+    isActive: true,
+    displayOrder: 2,
+    attributes: [
+      { name: 'Size', type: 'select', required: true, options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+      { name: 'Color', type: 'text', required: true },
+      { name: 'Material', type: 'text', required: true }
+    ]
+  },
+  {
+    name: 'Home & Garden',
+    description: 'Furniture, decor, and gardening supplies',
+    image: 'https://res.cloudinary.com/demo/image/upload/home.jpg',
+    isActive: true,
+    displayOrder: 3,
+    attributes: [
+      { name: 'Material', type: 'text', required: true },
+      { name: 'Dimensions', type: 'text', required: true }
+    ]
+  },
+  {
+    name: 'Books',
+    description: 'Books, textbooks, and educational materials',
+    image: 'https://res.cloudinary.com/demo/image/upload/books.jpg',
+    isActive: true,
+    displayOrder: 4,
+    attributes: [
+      { name: 'ISBN', type: 'text', required: true },
+      { name: 'Author', type: 'text', required: true },
+      { name: 'Format', type: 'select', required: true, options: ['Paperback', 'Hardcover', 'Digital'] }
+    ]
+  },
+  {
+    name: 'Sports & Fitness',
+    description: 'Sports equipment and fitness gear',
+    image: 'https://res.cloudinary.com/demo/image/upload/sports.jpg',
+    isActive: true,
+    displayOrder: 5,
+    attributes: [
+      { name: 'Type', type: 'text', required: true },
+      { name: 'Size', type: 'text', required: false }
+    ]
+  },
+  {
+    name: 'Beauty & Health',
+    description: 'Beauty products and health supplies',
+    image: 'https://res.cloudinary.com/demo/image/upload/beauty.jpg',
+    isActive: true,
+    displayOrder: 6,
+    attributes: [
+      { name: 'Brand', type: 'text', required: true },
+      { name: 'Volume/Weight', type: 'text', required: true },
+      { name: 'Expiry Date', type: 'date', required: true }
+    ]
+  },
+  {
+    name: 'Automotive',
+    description: 'Car parts and accessories',
+    image: 'https://res.cloudinary.com/demo/image/upload/automotive.jpg',
+    isActive: true,
+    displayOrder: 7,
+    attributes: [
+      { name: 'Make', type: 'text', required: true },
+      { name: 'Model', type: 'text', required: true },
+      { name: 'Year', type: 'number', required: true }
+    ]
+  },
+  {
+    name: 'Toys & Games',
+    description: 'Toys, games, and entertainment items',
+    image: 'https://res.cloudinary.com/demo/image/upload/toys.jpg',
+    isActive: true,
+    displayOrder: 8,
+    attributes: [
+      { name: 'Age Range', type: 'text', required: true },
+      { name: 'Category', type: 'select', required: true, options: ['Educational', 'Action Figures', 'Board Games', 'Outdoor'] }
+    ]
+  },
+  {
+    name: 'Food & Beverages',
+    description: 'Food items and beverages',
+    image: 'https://res.cloudinary.com/demo/image/upload/food.jpg',
+    isActive: true,
+    displayOrder: 9,
+    attributes: [
+      { name: 'Type', type: 'select', required: true, options: ['Fresh', 'Packaged', 'Frozen'] },
+      { name: 'Weight', type: 'text', required: true },
+      { name: 'Expiry Date', type: 'date', required: true }
+    ]
+  },
+  {
+    name: 'Art & Crafts',
+    description: 'Art supplies and craft materials',
+    image: 'https://res.cloudinary.com/demo/image/upload/art.jpg',
+    isActive: true,
+    displayOrder: 10,
+    attributes: [
+      { name: 'Medium', type: 'text', required: true },
+      { name: 'Material', type: 'text', required: true }
+    ]
+  }
 ];
 
-const seedDB = async () => {
-    try {
-        // Connect to MongoDB
-        await mongoose.connect(process.env.MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
-        console.log('Connected to MongoDB');
+/**
+ * SUBCATEGORIES (parentSlug based mapping)
+ */
+const initialSubCategories = [
+  { name: 'Mobile Phones', slug: 'mobile-phones', parentSlug: 'electronics' },
+  { name: 'Laptops', slug: 'laptops', parentSlug: 'electronics' },
+  { name: 'Audio', slug: 'audio', parentSlug: 'electronics' },
+  { name: 'TV & Displays', slug: 'tv-displays', parentSlug: 'electronics' },
+  { name: 'Accessories', slug: 'electronics-accessories', parentSlug: 'electronics' },
+  { name: 'Smart Devices', slug: 'smart-devices', parentSlug: 'electronics' },
 
-        // Check if admin already exists
-        const existingAdmin = await User.findOne({ email: adminUser.email });
-        
-        if (!existingAdmin) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(adminUser.password, salt);
-            
-            const newAdmin = new User({
-                ...adminUser,
-                password: hashedPassword
-            });
-            await newAdmin.save();
-            console.log('Admin user created successfully');
-        } else {
-            console.log('Admin user already exists');
-        }
+  { name: 'Men Clothing', slug: 'men-clothing', parentSlug: 'fashion' },
+  { name: 'Women Clothing', slug: 'women-clothing', parentSlug: 'fashion' },
+  { name: 'Shoes', slug: 'shoes', parentSlug: 'fashion' },
+  { name: 'Fashion Accessories', slug: 'fashion-accessories', parentSlug: 'fashion' },
+  { name: 'Kids Fashion', slug: 'kids-fashion', parentSlug: 'fashion' },
 
-        // Seed categories
-        let createdCount = 0;
-        let existingCount = 0;
+  { name: 'Furniture', slug: 'furniture', parentSlug: 'home-garden' },
+  { name: 'Kitchen & Dining', slug: 'kitchen-dining', parentSlug: 'home-garden' },
+  { name: 'Home Decor', slug: 'home-decor', parentSlug: 'home-garden' },
+  { name: 'Garden & Outdoor', slug: 'garden-outdoor', parentSlug: 'home-garden' },
 
-        for (const category of initialCategories) {
-            const existingCategory = await Category.findOne({ slug: category.slug });
-            if (!existingCategory) {
-                await Category.create(category);
-                createdCount++;
-                console.log(`Created category: ${category.name}`);
-            } else {
-                existingCount++;
-                console.log(`Category exists: ${category.name}`);
-            }
-        }
+  { name: 'Fiction', slug: 'fiction', parentSlug: 'books' },
+  { name: 'Non-Fiction', slug: 'non-fiction', parentSlug: 'books' },
+  { name: 'Educational Books', slug: 'educational-books', parentSlug: 'books' },
+  { name: 'Children Books', slug: 'children-books', parentSlug: 'books' },
 
-        console.log('\nSeeding Summary:');
-        console.log('----------------');
-        console.log(`Categories created: ${createdCount}`);
-        console.log(`Categories existing: ${existingCount}`);
-        console.log(`Total categories: ${createdCount + existingCount}`);
-        console.log('\nAdmin Login Credentials:');
-        console.log('Email:', adminUser.email);
-        console.log('Password:', adminUser.password);
+  { name: 'Gym Equipment', slug: 'gym-equipment', parentSlug: 'sports-fitness' },
+  { name: 'Sports Gear', slug: 'sports-gear', parentSlug: 'sports-fitness' },
+  { name: 'Outdoor Sports', slug: 'outdoor-sports', parentSlug: 'sports-fitness' },
+  { name: 'Sportswear', slug: 'sportswear', parentSlug: 'sports-fitness' },
 
-    } catch (error) {
-        console.error('Seeding error:', error);
-        process.exit(1);
-    } finally {
-        await mongoose.connection.close();
-        console.log('MongoDB connection closed');
+  { name: 'Skincare', slug: 'skincare', parentSlug: 'beauty-health' },
+  { name: 'Hair Care', slug: 'hair-care', parentSlug: 'beauty-health' },
+  { name: 'Makeup', slug: 'makeup', parentSlug: 'beauty-health' },
+  { name: 'Personal Care', slug: 'personal-care', parentSlug: 'beauty-health' },
+
+  { name: 'Car Parts', slug: 'car-parts', parentSlug: 'automotive' },
+  { name: 'Car Accessories', slug: 'car-accessories', parentSlug: 'automotive' },
+  { name: 'Car Electronics', slug: 'car-electronics', parentSlug: 'automotive' },
+
+  { name: 'Toys', slug: 'toys', parentSlug: 'toys-games' },
+  { name: 'Games', slug: 'games', parentSlug: 'toys-games' },
+  { name: 'Outdoor Toys', slug: 'outdoor-toys', parentSlug: 'toys-games' },
+
+  { name: 'Fresh Food', slug: 'fresh-food', parentSlug: 'food-beverages' },
+  { name: 'Packaged Food', slug: 'packaged-food', parentSlug: 'food-beverages' },
+  { name: 'Beverages', slug: 'beverages', parentSlug: 'food-beverages' },
+
+  { name: 'Painting Supplies', slug: 'painting-supplies', parentSlug: 'art-crafts' },
+  { name: 'Drawing Tools', slug: 'drawing-tools', parentSlug: 'art-crafts' },
+  { name: 'Craft Materials', slug: 'craft-materials', parentSlug: 'art-crafts' }
+];
+
+async function seedDB() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
+
+    // ---------------- ADMIN ----------------
+    const existingAdmin = await User.findOne({ email: adminUser.email });
+
+    if (!existingAdmin) {
+      const hashed = await bcrypt.hash(adminUser.password, 10);
+      await User.create({ ...adminUser, password: hashed });
+      console.log('Admin created');
+    } else {
+      console.log('Admin already exists');
     }
-};
 
-// Check if running in production
-if (process.env.NODE_ENV === 'production') {
-    // Add additional safety checks for production
-    const readline = require('readline').createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
+    // ---------------- CATEGORIES ----------------
+    const categoryMap = {};
 
-    readline.question('Are you sure you want to run this seed in production? (yes/no) ', async (answer) => {
-        if (answer.toLowerCase() === 'yes') {
-            console.log('Running seed in production...');
-            await seedDB();
-        } else {
-            console.log('Seed operation cancelled');
-        }
-        readline.close();
-    });
-} else {
-    // Development environment
-    seedDB();
+    for (const cat of initialCategories) {
+      let category = await Category.findOne({ name: cat.name });
+
+      if (!category) {
+        category = await Category.create(cat);
+        console.log(`Created category: ${cat.name}`);
+      } else {
+        console.log(`Category exists: ${cat.name}`);
+      }
+
+      categoryMap[category.slug] = category;
+    }
+
+    // ---------------- SUBCATEGORIES ----------------
+    for (const sub of initialSubCategories) {
+      const parent = categoryMap[sub.parentSlug];
+      if (!parent) continue;
+
+      let subCategory = await Category.findOne({ slug: sub.slug });
+
+      if (!subCategory) {
+        subCategory = await Category.create({
+          name: sub.name,
+          description: `${sub.name} subcategory`,
+          image: parent.image,
+          isActive: true,
+          displayOrder: 1,
+          parentCategory: parent._id,
+          level: 2,
+          attributes: []
+        });
+
+        console.log(`Created subcategory: ${sub.name}`);
+      } else {
+        console.log(`Subcategory exists: ${sub.name}`);
+      }
+    }
+
+    console.log('Seeding complete');
+  } catch (err) {
+    console.error('Seed error:', err);
+  } finally {
+    await mongoose.connection.close();
+    console.log('DB closed');
+  }
 }
+
+seedDB();
