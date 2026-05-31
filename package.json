@@ -19,7 +19,7 @@
     "cleanup": "node scripts/maintenance/clean-uploads.js",
     "health": "node scripts/monitor/health-check.js",
     "cleanup-accounts": "node src/scripts/cleanupDeletedAccounts.js",
-    "fix:shopStats": "node scripts/utils/fixStuckShopStats.js"
+    "fix:shopStats": "node scripts/fixStuckShopStats.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.714.0",

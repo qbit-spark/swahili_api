@@ -35,17 +35,83 @@ const trackView = async (productId, ip, userId) => {
   }
 };
 
+// exports.createProduct = async (req, res) => {
+//   try {
+//     // First check if the user has a shop
+//     const shop = await Shop.findOne({ owner: req.user.id });
+//     if (!shop) {
+//       return res.status(400).json({
+//         success: false,
+//         errors: ['You must create a shop before adding products'],
+//         data: null
+//       });
+//     }
+
+//     // Validate input
+//     const { name, price, category } = req.body;
+//     const errors = [];
+
+//     if (!name) errors.push('Product name is required');
+//     if (!price) errors.push('Price is required');
+//     if (!category) errors.push('Category is required');
+
+//     if (errors.length > 0) {
+//       return res.status(400).json({
+//         success: false,
+//         errors: errors,
+//         data: null
+//       });
+//     }
+
+//     // Create new product with the shop ID
+//     const product = new Product({
+//       ...req.body,
+//       shop: shop._id  // Use the shop's ID
+//     });
+
+//     await product.save();
+
+//     // Update shop metrics - increment total products
+//     await Shop.findByIdAndUpdate(
+//       shop._id,
+//       { $inc: { 'metrics.totalProducts': 1 } }
+//     );
+
+//     res.status(201).json({
+//       success: true,
+//       data: { product },
+//       errors: []
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       success: false,
+//       data: null,
+//       errors: [err.message]
+//     });
+//   }
+// };
+
 exports.createProduct = async (req, res) => {
   try {
-    // First check if the user has a shop
+    console.log('================ CREATE PRODUCT START ================');
+    console.log('User:', req.user?.id);
+    console.log('Payload:', req.body);
+
+    // Check shop
+    console.log('Checking shop for owner...');
     const shop = await Shop.findOne({ owner: req.user.id });
+
     if (!shop) {
+      console.log('No shop found for user:', req.user.id);
+
       return res.status(400).json({
         success: false,
         errors: ['You must create a shop before adding products'],
         data: null
       });
     }
+
+    console.log('Shop found:', shop._id);
 
     // Validate input
     const { name, price, category } = req.body;
@@ -56,34 +122,53 @@ exports.createProduct = async (req, res) => {
     if (!category) errors.push('Category is required');
 
     if (errors.length > 0) {
+      console.log('Validation errors:', errors);
+
       return res.status(400).json({
         success: false,
-        errors: errors,
+        errors,
         data: null
       });
     }
 
-    // Create new product with the shop ID
+    // Create product
+    console.log('Creating product...');
     const product = new Product({
       ...req.body,
-      shop: shop._id  // Use the shop's ID
+      shop: shop._id
     });
+
+    console.log('Product instance created (not saved yet)');
 
     await product.save();
 
-    // Update shop metrics - increment total products
-    await Shop.findByIdAndUpdate(
-      shop._id,
-      { $inc: { 'metrics.totalProducts': 1 } }
-    );
+    console.log('Product saved successfully:', product._id);
 
-    res.status(201).json({
+    // Update shop metrics
+    console.log('Updating shop metrics...');
+    await Shop.findByIdAndUpdate(shop._id, {
+      $inc: { 'metrics.totalProducts': 1 }
+    });
+
+    console.log('Shop metrics updated');
+
+    console.log('================ CREATE PRODUCT END ================');
+
+    return res.status(201).json({
       success: true,
       data: { product },
       errors: []
     });
+
   } catch (err) {
-    res.status(500).json({
+    console.error('================ CREATE PRODUCT ERROR ================');
+    console.error('Message:', err.message);
+    console.error('Code:', err.code);
+    console.error('KeyPattern:', err.keyPattern);
+    console.error('KeyValue:', err.keyValue);
+    console.error('Stack:', err.stack);
+
+    return res.status(500).json({
       success: false,
       data: null,
       errors: [err.message]
