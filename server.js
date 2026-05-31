@@ -46,9 +46,21 @@ app.use(requestLogger); // Request logging
 app.use(paginateResults);
 app.use(securityMiddleware);
 app.set('trust proxy', 1); // Trust first proxy for rate limiting and secure cookies
-app.use('/api-docs', swagger.serve, swagger.setup);
 
-// Rate limiting
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    console.log(
+      `${req.method} ${req.path}`,
+      '→', res.statusCode,
+      body.success === false ? `❌ ${JSON.stringify(body.errors)}` : '✅'
+    );
+    return originalJson(body);
+  };
+  next();
+});
+
+app.use('/api-docs', swagger.serve, swagger.setup);
 app.use('/api/v1/', apiLimiter);
 
 // Routes
