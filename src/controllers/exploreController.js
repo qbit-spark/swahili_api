@@ -9,7 +9,7 @@ const {
 const Product = require('../models/Product');
 const Post    = require('../models/Post');
 const Video   = require('../models/Video');
-const AMA     = require('../models/AMA');
+const AMA     = require('../models/Ama');
 
 // ─── Cursor helpers ───────────────────────────────────────────────────────────
 // Cursor = base64("<score>_<id>") — opaque to the client, stable across re-ranks
