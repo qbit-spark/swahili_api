@@ -1,4 +1,4 @@
-const AMA = require('../models/AMA');
+const AMA = require('../models/Ama');
 const { uploadToCloudinary, deleteTempFile, cloudinary } = require('../config/cloudinary');
 const { parseImage } = require('../middleware/multer');
 const { emitAmaViewSignal, emitAmaQuestionSignal } = require('../queues/exploreQueue');
