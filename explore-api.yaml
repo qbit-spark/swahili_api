@@ -1,0 +1,287 @@
+openapi: 3.0.0
+info:
+  title: Explore API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api/v1
+
+paths:
+  /posts:
+    get:
+      summary: Get Posts
+    post:
+      summary: Create Post
+
+  /posts/{id}:
+    get:
+      summary: Get Post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      summary: Update Post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    delete:
+      summary: Delete Post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /posts/{id}/like:
+    post:
+      summary: Like Post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /posts/{id}/save:
+    post:
+      summary: Save Post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /posts/{id}/comments:
+    get:
+      summary: Get Post Comments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      summary: Create Comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /videos:
+    get:
+      summary: Get Videos
+    post:
+      summary: Create Video
+
+  /videos/{id}:
+    get:
+      summary: Get Video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      summary: Update Video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    delete:
+      summary: Delete Video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /videos/{id}/publish:
+    patch:
+      summary: Publish Video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /videos/{id}/like:
+    post:
+      summary: Like Video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /videos/{id}/view:
+    post:
+      summary: Track Video View
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /videos/{id}/share:
+    post:
+      summary: Share Video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /videos/trending:
+    get:
+      summary: Get Trending Videos
+
+  /amas:
+    get:
+      summary: Get AMAs
+    post:
+      summary: Create AMA
+
+  /amas/{id}:
+    get:
+      summary: Get AMA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      summary: Update AMA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    delete:
+      summary: Delete AMA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/open:
+    patch:
+      summary: Open AMA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/close:
+    patch:
+      summary: Close AMA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/completion:
+    post:
+      summary: Complete AMA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/questions:
+    get:
+      summary: Get AMA Questions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      summary: Ask Question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/questions/{qId}/answer:
+    patch:
+      summary: Answer Question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: qId
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/questions/{qId}/pin:
+    patch:
+      summary: Pin Question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: qId
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /amas/{id}/questions/{qId}/upvote:
+    post:
+      summary: Upvote Question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: qId
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /explore/feed:
+    get:
+      summary: Explore Feed
+
+  /explore/trending:
+    get:
+      summary: Explore Trending
