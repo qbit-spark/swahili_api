@@ -82,6 +82,11 @@ app.use('/api/v1/wishlist', require('./src/routes/wishlist'));
 app.use('/api/v1/announcements', require('./src/routes/announcements'));
 app.use('/api/v1/webhooks', webhookRoutes);
 app.use('/api/v1/withdrawals', require('./src/routes/withdrawals'));
+app.use('/api/v1/posts',  require('./src/routes/posts'));
+app.use('/api/v1/videos', require('./src/routes/videos'));
+app.use('/api/v1/amas',   require('./src/routes/amas'));
+app.use('/api/v1/explore', require('./src/routes/explore'));
+app.use('/api/v1/events', require('./src/routes/events'));
 app.get('/p/:id', require('./src/controllers/productController').getProductSharePage);
 
 Sentry.setupExpressErrorHandler(app);
