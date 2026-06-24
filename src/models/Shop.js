@@ -105,6 +105,12 @@ const ShopSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    verificationTier: {
+      type: String,
+      enum: ['none', 'blue', 'green', 'gold'],
+      default: 'none',
+      index: true,
+    },
     documents: [{
       type: String
     }],

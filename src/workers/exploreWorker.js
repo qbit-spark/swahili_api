@@ -153,9 +153,21 @@ const buildFeed = async ({ model, contentType, filter, populateFields, userId, r
     .populate(populateFields)
     .lean();
 
+
+  // const scored = items.map((item) => {
+  //   const { score, breakdown } = scoreItem(item, contentType, userInterest);
+  //   return { item, score, breakdown };
+  // });
+
   const scored = items.map((item) => {
     const { score, breakdown } = scoreItem(item, contentType, userInterest);
-    return { item, score, breakdown };
+    const sellerId = (item.seller?._id ?? item.seller)?.toString();
+    const boost = boosts[sellerId] ?? 1.0;
+    return {
+      item,
+      score: parseFloat((score * boost).toFixed(4)),
+      breakdown: { ...breakdown, verificationBoost: boost },
+    };
   });
 
   scored.sort((a, b) => b.score - a.score);

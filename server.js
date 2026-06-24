@@ -2,6 +2,7 @@ require('dotenv').config();
 require("./instruments");
 require('./src/workers/referralWorker');
 require('./src/workers/exploreWorker');
+require('./src/workers/verificationWorker')
 const Sentry = require("@sentry/node");
 const express = require('express');
 const connectDB = require('./src/config/db');
@@ -90,6 +91,7 @@ app.use('/api/v1/amas', require('./src/routes/amas'));
 app.use('/api/v1/explore', require('./src/routes/explore'));
 app.use('/api/v1/events', require('./src/routes/events'));
 app.use('/api/v1/referrals', require('./src/routes/referrals'));
+app.use('/api/v1/verification', require('./src/routes/verification'));
 app.get('/p/:id', require('./src/controllers/productController').getProductSharePage);
 
 Sentry.setupExpressErrorHandler(app);

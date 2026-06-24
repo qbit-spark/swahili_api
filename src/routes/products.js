@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 const auth = require('../middleware/auth');
+const enforceListingCap = require('../middleware/enforceListingCap');
+
 
 /**
  * @swagger
@@ -181,7 +183,7 @@ router.get("/share/:id", productController.getProductSharePage);
  *       403:
  *         description: Forbidden - Sellers only
  */
-router.post('/', auth, productController.createProduct);
+router.post('/', auth, enforceListingCap, productController.createProduct);
 
 // Get all products (public route)
 router.get('/', productController.getAllProducts);
