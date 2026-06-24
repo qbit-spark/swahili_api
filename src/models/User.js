@@ -109,6 +109,28 @@ const userSchema = new mongoose.Schema({
     },
     timezone: String
   },
+  wallet: {
+    balance: {
+      type: Number,
+      default: 0,
+      min: 0
+    }
+    // Spend-only credit (referral rewards + welcome bonuses). Not
+    // withdrawable as cash — applied as a discount at checkout only.
+  },
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true, // allows nulls during migration of existing users
+    index: true
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+    // Set ONCE at signup. Never changes after. Null = organic signup,
+    // no referrer.
+  },
   paymentMethods: [{
     type: {
       type: String,
@@ -209,6 +231,12 @@ userSchema.methods.resetLoginAttempts = async function () {
   };
   await this.save();
 };
+ userSchema.methods.creditWallet = async function (amount) {
+    this.wallet = this.wallet || { balance: 0 };
+    this.wallet.balance = (this.wallet.balance || 0) + amount;
+    await this.save();
+    return this.wallet.balance;
+  };
 
 // Add default roles
 const defaultRoles = [

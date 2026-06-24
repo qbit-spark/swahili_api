@@ -133,12 +133,25 @@ const ShopSchema = new mongoose.Schema({
     default: Date.now
   },
   wallet: {
-  currentBalance: { type: Number, default: 0 },
-  lockedBalance: { type: Number, default: 0 }, 
-  currency: { type: String, default: 'TZS' }
-}
+    currentBalance: { type: Number, default: 0 },
+    lockedBalance: { type: Number, default: 0 },
+    // Spend-only credit earned from referring other sellers/buyers.
+    // NOT part of sales revenue, NOT included in metrics.totalRevenue,
+    // NOT withdrawable as cash (per current product decision) — usable
+    // only as platform spend credit (e.g. discount on the shop owner's
+    // own purchases, future promoted-listing fees, etc).
+    referralBalance: { type: Number, default: 0 },
+    currency: { type: String, default: 'TZS' }
+  }
 
 });
+
+ShopSchema.methods.creditReferralBalance = async function (amount) {
+  this.wallet = this.wallet || { currentBalance: 0, lockedBalance: 0, referralBalance: 0, currency: 'TZS' };
+  this.wallet.referralBalance = (this.wallet.referralBalance || 0) + amount;
+  await this.save();
+  return this.wallet.referralBalance;
+};
 
 ShopSchema.set('toJSON', {
   transform: (doc, ret) => {
@@ -148,7 +161,7 @@ ShopSchema.set('toJSON', {
 });
 
 // Update timestamp on save
-ShopSchema.pre('save', function(next) {
+ShopSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
