@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const { isValidObjectId } = mongoose;
 const paymentService = require('../services/paymentService');
 const notificationService = require('../services/notificationService');
+const { requestRewardPayout } = require('../queues/referralQueue');
 
 const ORDER_STATUS_FLOW = {
   pending_payment: ['pending', 'cancelled'],
@@ -23,7 +24,7 @@ const isValidStatusTransition = (currentStatus, newStatus) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { productId, quantity, shippingAddress, paymentMethod } = req.body;
+    const { productId, quantity, shippingAddress, paymentMethod, useWalletCredit } = req.body;
     const userId = req.user._id;
 
     // Validate input
@@ -60,25 +61,30 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // Calculate total amount
     const subtotal = product.price * quantity;
-    const totalAmount = subtotal;
+    let walletCreditApplied = 0;
+    let totalAmount = subtotal;
 
-    // Prepare order data
+    if (useWalletCredit) {
+      const buyer = await User.findById(userId);
+      const availableCredit = buyer?.wallet?.balance || 0;
+      walletCreditApplied = Math.min(availableCredit, subtotal);
+      totalAmount = subtotal - walletCreditApplied;
+    }
+
     const orderData = {
       user: userId,
       shop: product.shop._id,
-      items: [{
-        product: productId,
-        quantity,
-        price: product.price,
-        name: product.name
-      }],
+      items: [{ product: productId, quantity, price: product.price, name: product.name }],
       shippingAddress,
       paymentMethod,
       amounts: {
-        subtotal,
-        total: totalAmount
+        subtotal,               // IMPORTANT: keep subtotal as the FULL pre-credit
+        // value — this is what the referral reward tiers
+        // are calculated against (in referralWorker.js),
+        // so wallet credit must never shrink it.
+        walletCreditApplied,
+        total: totalAmount,     // what actually needs to be paid via paymentMethod
       },
       status: paymentMethod === 'mobile_money' ? 'pending_payment' : 'pending',
       paymentStatus: 'pending'
@@ -119,6 +125,12 @@ exports.createOrder = async (req, res) => {
     // Create and save order
     const order = new Order(orderData);
     await order.save();
+
+    // Deduct the credit from the buyer's wallet ONLY after the order is
+    // successfully created (avoid deducting on a failed order attempt).
+    if (walletCreditApplied > 0) {
+      await User.findByIdAndUpdate(userId, { $inc: { 'wallet.balance': -walletCreditApplied } });
+    }
 
     // Update product stock and add order reference
     await Product.findByIdAndUpdate(
@@ -454,13 +466,25 @@ exports.updateOrderStatus = async (req, res) => {
 
         await shop.save();
 
-        console.log(
-          `💰 Credited ${orderRevenue} to shop wallet`
-        );
+        // console.log(
+        //   `💰 Credited ${orderRevenue} to shop wallet`
+        // );
 
-        console.log(
-          `📊 Shop metrics updated: orders=${shop.metrics.totalOrders}, revenue=${shop.metrics.totalRevenue}`
-        );
+        // console.log(
+        //   `📊 Shop metrics updated: orders=${shop.metrics.totalOrders}, revenue=${shop.metrics.totalRevenue}`
+        // );
+
+        // ─ Referral reward check ──────────────────────────────────────────
+        // Fire-and-forget: queues a job to check if the BUYER on this order
+        // (order.user) is a referee on a referral link, and if so, pays the
+        // referrer + (on first qualification) the referee's welcome credit.
+        // Wrapped in try/catch so a referral-system issue NEVER breaks order
+        // status updates — this is a non-critical side effect of delivery.
+        try {
+          await requestRewardPayout(order._id, order.user._id || order.user);
+        } catch (err) {
+          console.error('⚠️  Failed to queue referral reward check:', err.message);
+        }
       }
     }
 

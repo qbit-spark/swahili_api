@@ -1,22 +1,22 @@
 const { Worker } = require('bullmq');
 const { bullMQConnection, getRedisClient, TTL, KEYS } = require('../config/redis');
 const { JOBS } = require('../queues/exploreQueue');
-const Product     = require('../models/Product');
-const Post        = require('../models/Post');
-const Video       = require('../models/Video');
-const AMA         = require('../models/AMA');
-const Event       = require('../models/Event');
-const Trending    = require('../models/Trending');
+const Product = require('../models/Product');
+const Post = require('../models/Post');
+const Video = require('../models/Video');
+const AMA = require('../models/AMA');
+const Event = require('../models/Event');
+const Trending = require('../models/Trending');
 const UserInterest = require('../models/UserInterest');
 
 // ─── Scoring Weights per content type ────────────────────────────────────────
 const WEIGHTS = {
   product: { trendVelocity: 0.30, categoryAffinity: 0.35, engagementRate: 0.20, freshness: 0.15 },
-  post:    { trendVelocity: 0.25, categoryAffinity: 0.20, engagementRate: 0.35, freshness: 0.20 },
-  video:   { trendVelocity: 0.30, categoryAffinity: 0.20, engagementRate: 0.30, freshness: 0.20 },
-  ama:     { trendVelocity: 0.15, categoryAffinity: 0.20, engagementRate: 0.25, freshness: 0.40 },
+  post: { trendVelocity: 0.25, categoryAffinity: 0.20, engagementRate: 0.35, freshness: 0.20 },
+  video: { trendVelocity: 0.30, categoryAffinity: 0.20, engagementRate: 0.30, freshness: 0.20 },
+  ama: { trendVelocity: 0.15, categoryAffinity: 0.20, engagementRate: 0.25, freshness: 0.40 },
   // Events: freshness dominates — a past event should vanish from feed fast
-  event:   { trendVelocity: 0.15, categoryAffinity: 0.20, engagementRate: 0.15, freshness: 0.50 },
+  event: { trendVelocity: 0.15, categoryAffinity: 0.20, engagementRate: 0.15, freshness: 0.50 },
 };
 
 // ─── Shared Scoring Helpers ───────────────────────────────────────────────────
@@ -41,13 +41,13 @@ const scoreFreshness = (createdAt, contentType) => {
 const scoreTrendVelocity = (item, contentType) => {
   let total = 0, recent = 0;
   if (contentType === 'product') {
-    total  = item.views?.total  || 0;
+    total = item.views?.total || 0;
     recent = item.views?.unique || 0;
   } else if (contentType === 'post') {
-    total  = item.engagement?.views || 0;
+    total = item.engagement?.views || 0;
     recent = (item.engagement?.likes || 0) + (item.engagement?.saves || 0);
   } else if (contentType === 'video') {
-    total  = item.engagement?.views || 0;
+    total = item.engagement?.views || 0;
     recent = item.engagement?.uniqueViews || 0;
   } else if (contentType === 'event') {
     // Upcoming events get a boost, past events velocity drops to 0
@@ -57,11 +57,11 @@ const scoreTrendVelocity = (item, contentType) => {
     return Math.min(rsvps / 100, 1);
   } else if (contentType === 'ama') {
     // For AMAs: open status is a velocity signal in itself
-    const isOpen   = item.status === 'open';
+    const isOpen = item.status === 'open';
     const questions = item.engagement?.totalQuestions || 0;
     return isOpen ? Math.min(0.5 + (questions / 50) * 0.5, 1) : Math.min(questions / 100, 0.4);
   }
-  const ageDays  = Math.max(1, (Date.now() - new Date(item.createdAt).getTime()) / 86400000);
+  const ageDays = Math.max(1, (Date.now() - new Date(item.createdAt).getTime()) / 86400000);
   const dailyAvg = total / ageDays;
   return parseFloat(Math.min(dailyAvg > 0 ? recent / dailyAvg : 0, 1).toFixed(4));
 };
@@ -104,16 +104,16 @@ const scoreCategoryAffinity = (item, userInterest, contentType) => {
  */
 const scoreItem = (item, contentType, userInterest) => {
   const W = WEIGHTS[contentType];
-  const trendVelocity    = scoreTrendVelocity(item, contentType);
+  const trendVelocity = scoreTrendVelocity(item, contentType);
   const categoryAffinity = scoreCategoryAffinity(item, userInterest, contentType);
-  const engagementRate   = scoreEngagement(item, contentType);
-  const freshness        = scoreFreshness(item.createdAt, contentType);
+  const engagementRate = scoreEngagement(item, contentType);
+  const freshness = scoreFreshness(item.createdAt, contentType);
 
   const score =
-    trendVelocity    * W.trendVelocity +
+    trendVelocity * W.trendVelocity +
     categoryAffinity * W.categoryAffinity +
-    engagementRate   * W.engagementRate +
-    freshness        * W.freshness;
+    engagementRate * W.engagementRate +
+    freshness * W.freshness;
 
   return {
     score: parseFloat(score.toFixed(4)),
@@ -137,7 +137,7 @@ const loadUserInterest = async (userId, redis) => {
   const doc = await UserInterest.findOne({ user: userId });
   if (doc) {
     const interestMap = Object.fromEntries(doc.categoryAffinities);
-    await redis.setex(KEYS.userInterests(userId), TTL.USER_INTERESTS, JSON.stringify(interestMap)).catch(() => {});
+    await redis.setex(KEYS.userInterests(userId), TTL.USER_INTERESTS, JSON.stringify(interestMap)).catch(() => { });
   }
   return doc;
 };
@@ -173,16 +173,16 @@ const buildFeed = async ({ model, contentType, filter, populateFields, userId, r
 
   // Build cache payload — slim fields only, keep payload tight
   const feed = top.map(({ item, score, breakdown }) => ({
-    _id:    item._id,
+    _id: item._id,
     _score: score,
     _cursor: encodeCursor(score, item._id.toString()),
     _breakdown: breakdown,
     contentType,
     // Common fields
-    seller:    item.seller,
-    shop:      item.shop,
-    category:  item.category,
-    status:    item.status,
+    seller: item.seller,
+    shop: item.shop,
+    category: item.category,
+    status: item.status,
     createdAt: item.createdAt,
     // Type-specific fields
     ...(contentType === 'product' && {
@@ -234,7 +234,7 @@ const signalWorker = new Worker(
     };
 
     const { requestFeedBuild, requestPostsFeedBuild,
-            requestVideosFeedBuild, requestAmasFeedBuild } = require('../queues/exploreQueue');
+      requestVideosFeedBuild, requestAmasFeedBuild } = require('../queues/exploreQueue');
 
     switch (job.name) {
       case JOBS.INGEST_VIEW:
@@ -296,24 +296,24 @@ const signalWorker = new Worker(
         }
         break;
 
-      
-    case JOBS.INGEST_EVENT_VIEW:
-      await applySignal(0.1, KEYS.userEventsFeed);
-      if (job.data.eventId) {
-        await Event.findByIdAndUpdate(job.data.eventId, { $inc: { 'engagement.views': 1 } });
-      }
-      break;
 
-    case JOBS.INGEST_EVENT_ENGAGE: {
-      const w = job.data.engageType === 'rsvp' ? 0.9 : 0.3;
-      await applySignal(w, KEYS.userEventsFeed);
-      if (userId && w >= 0.9) {
-        const { requestEventsFeedBuild } = require('../queues/exploreQueue');
-        await requestEventsFeedBuild(userId);
+      case JOBS.INGEST_EVENT_VIEW:
+        await applySignal(0.1, KEYS.userEventsFeed);
+        if (job.data.eventId) {
+          await Event.findByIdAndUpdate(job.data.eventId, { $inc: { 'engagement.views': 1 } });
+        }
+        break;
+
+      case JOBS.INGEST_EVENT_ENGAGE: {
+        const w = job.data.engageType === 'rsvp' ? 0.9 : 0.3;
+        await applySignal(w, KEYS.userEventsFeed);
+        if (userId && w >= 0.9) {
+          const { requestEventsFeedBuild } = require('../queues/exploreQueue');
+          await requestEventsFeedBuild(userId);
+        }
+        break;
       }
-      break;
-    }
-    case JOBS.INGEST_AMA_QUESTION:
+      case JOBS.INGEST_AMA_QUESTION:
         // Asking a question = highest AMA signal
         await applySignal(0.8, KEYS.userAmasFeed);
         if (job.data.amaId) {
@@ -336,7 +336,7 @@ const trendWorker = new Worker(
   async (job) => {
     const redis = getRedisClient();
     const { requestTrendingBuild, requestTrendingPostsBuild,
-            requestTrendingVideosBuild, requestTrendingAmasBuild } = require('../queues/exploreQueue');
+      requestTrendingVideosBuild, requestTrendingAmasBuild } = require('../queues/exploreQueue');
 
     if (job.name === JOBS.SCORE_TRENDING) {
       // Products (existing behaviour) — score and write to Redis per product
@@ -438,8 +438,8 @@ const feedWorker = new Worker(
     // Products feeds (existing)
     if (job.name === JOBS.BUILD_USER_FEED || job.name === JOBS.BUILD_TRENDING_FEED) {
       const isPersonalized = job.name === JOBS.BUILD_USER_FEED;
-      const userId    = isPersonalized ? job.data.userId : null;
-      const cacheKey  = isPersonalized ? KEYS.userFeed(userId) : KEYS.trendingFeed();
+      const userId = isPersonalized ? job.data.userId : null;
+      const cacheKey = isPersonalized ? KEYS.userFeed(userId) : KEYS.trendingFeed();
 
       await buildFeed({
         model: Product,
@@ -456,7 +456,7 @@ const feedWorker = new Worker(
     // Posts feeds
     if (job.name === JOBS.BUILD_USER_POSTS_FEED || job.name === JOBS.BUILD_TRENDING_POSTS_FEED) {
       const isPersonalized = job.name === JOBS.BUILD_USER_POSTS_FEED;
-      const userId   = isPersonalized ? job.data.userId : null;
+      const userId = isPersonalized ? job.data.userId : null;
       const cacheKey = isPersonalized ? KEYS.userPostsFeed(userId) : KEYS.trendingPostsFeed();
 
       await buildFeed({
@@ -478,7 +478,7 @@ const feedWorker = new Worker(
     // Videos feeds
     if (job.name === JOBS.BUILD_USER_VIDEOS_FEED || job.name === JOBS.BUILD_TRENDING_VIDEOS_FEED) {
       const isPersonalized = job.name === JOBS.BUILD_USER_VIDEOS_FEED;
-      const userId   = isPersonalized ? job.data.userId : null;
+      const userId = isPersonalized ? job.data.userId : null;
       const cacheKey = isPersonalized ? KEYS.userVideosFeed(userId) : KEYS.trendingVideosFeed();
 
       await buildFeed({
@@ -501,9 +501,9 @@ const feedWorker = new Worker(
     // Events feeds
     if (job.name === JOBS.BUILD_USER_EVENTS_FEED || job.name === JOBS.BUILD_TRENDING_EVENTS_FEED) {
       const isPersonalized = job.name === JOBS.BUILD_USER_EVENTS_FEED;
-      const userId   = isPersonalized ? job.data.userId : null;
+      const userId = isPersonalized ? job.data.userId : null;
       const cacheKey = isPersonalized ? KEYS.userEventsFeed(userId) : KEYS.trendingEventsFeed();
-      const now      = new Date();
+      const now = new Date();
 
       await buildFeed({
         model: Event,
@@ -511,8 +511,8 @@ const feedWorker = new Worker(
         filter: { status: 'published', startsAt: { $gte: now } },
         populateFields: [
           { path: 'category', select: 'name' },
-          { path: 'shop',     select: 'name' },
-          { path: 'seller',   select: 'profile.firstName profile.lastName profile.avatar' },
+          { path: 'shop', select: 'name' },
+          { path: 'seller', select: 'profile.firstName profile.lastName profile.avatar' },
         ],
         userId,
         redis,
@@ -523,9 +523,9 @@ const feedWorker = new Worker(
     // AMAs feeds
     if (job.name === JOBS.BUILD_USER_AMAS_FEED || job.name === JOBS.BUILD_TRENDING_AMAS_FEED) {
       const isPersonalized = job.name === JOBS.BUILD_USER_AMAS_FEED;
-      const userId   = isPersonalized ? job.data.userId : null;
+      const userId = isPersonalized ? job.data.userId : null;
       const cacheKey = isPersonalized ? KEYS.userAmasFeed(userId) : KEYS.trendingAmasFeed();
-      const cutoff   = new Date(Date.now() - 48 * 60 * 60 * 1000);
+      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
       await buildFeed({
         model: AMA,
