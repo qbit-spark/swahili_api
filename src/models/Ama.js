@@ -96,4 +96,6 @@ amaSchema.index({ status: 1, _exploreScore: -1 });
 amaSchema.index({ status: 1, closedAt: -1 });
 amaSchema.index({ seller: 1, createdAt: -1 });
 
-module.exports = mongoose.model('AMA', amaSchema);
+module.exports =
+  mongoose.models.AMA ||
+  mongoose.model('AMA', amaSchema);
