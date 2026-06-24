@@ -50,16 +50,16 @@ app.use(securityMiddleware);
 app.set('trust proxy', 1); // Trust first proxy for rate limiting and secure cookies
 
 app.use((req, res, next) => {
-  const originalJson = res.json.bind(res);
-  res.json = (body) => {
-    console.log(
-      `${req.method} ${req.path}`,
-      '→', res.statusCode,
-      body.success === false ? `❌ ${JSON.stringify(body.errors)}` : '✅'
-    );
-    return originalJson(body);
-  };
-  next();
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+        console.log(
+            `${req.method} ${req.path}`,
+            '→', res.statusCode,
+            body.success === false ? `❌ ${JSON.stringify(body.errors)}` : '✅'
+        );
+        return originalJson(body);
+    };
+    next();
 });
 
 app.use('/api-docs', swagger.serve, swagger.setup);
@@ -84,9 +84,9 @@ app.use('/api/v1/wishlist', require('./src/routes/wishlist'));
 app.use('/api/v1/announcements', require('./src/routes/announcements'));
 app.use('/api/v1/webhooks', webhookRoutes);
 app.use('/api/v1/withdrawals', require('./src/routes/withdrawals'));
-app.use('/api/v1/posts',  require('./src/routes/posts'));
+app.use('/api/v1/posts', require('./src/routes/posts'));
 app.use('/api/v1/videos', require('./src/routes/videos'));
-app.use('/api/v1/amas',   require('./src/routes/amas'));
+app.use('/api/v1/amas', require('./src/routes/amas'));
 app.use('/api/v1/explore', require('./src/routes/explore'));
 app.use('/api/v1/events', require('./src/routes/events'));
 app.use('/api/v1/referrals', require('./src/routes/referrals'));
