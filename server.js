@@ -3,6 +3,7 @@ require("./instruments");
 require('./src/workers/referralWorker');
 require('./src/workers/exploreWorker');
 require('./src/workers/verificationWorker')
+require('./src/workers/searchSyncWorker')
 const Sentry = require("@sentry/node");
 const express = require('express');
 const connectDB = require('./src/config/db');
@@ -18,14 +19,56 @@ const webhookRoutes = require('./src/routes/webhooks')
 const swagger = require('./src/config/swagger');
 const app = express();
 const WishlistReminderService = require('./src/services/wishlistReminderService');
+const { configureProductsIndex } = require('./src/config/meilisearch');
+const { searchSyncQueue, triggerFullReindex } = require('./src/queues/searchSyncQueue');
 
 
+/**
+ * Schedules recurring background jobs that should persist across server
+ * restarts. BullMQ's `repeat` option with a fixed `jobId` is idempotent —
+ * calling .add() again on every boot does NOT create duplicate repeating
+ * jobs, it just confirms/updates the existing schedule. Safe to call here
+ * every time the server starts.
+ */
+async function scheduleRecurringJobs() {
+    // Nightly full reindex — safety net for any drift between MongoDB and
+    // Meilisearch (e.g. a sync job that failed silently, manual DB edits).
+    await searchSyncQueue.add(
+        'reindex:full',
+        {},
+        {
+            jobId: 'nightly-full-reindex', // colon-free, see JOBID_FIX
+            repeat: { pattern: '0 3 * * *' }, // 3am daily, server timezone
+        }
+    );
+
+    console.log('[Bootstrap] Recurring jobs scheduled (nightly search reindex)');
+}
 
 // Initialize database and services
 async function initializeApp() {
     try {
         await connectDB();
         // console.log('Database connected successfully');
+
+        const initSearch = async () => {
+            await configureProductsIndex();   // idempotent, safe every boot
+
+            // Only auto-trigger a full reindex in production. In dev,
+            // nodemon restarts constantly — queuing a full reindex of the
+            // entire catalogue on every file save is wasteful and noisy.
+            // The nightly cron job below + the manual fixSearchIndex.js
+            // script cover dev/testing needs without the auto-trigger.
+            if (process.env.NODE_ENV === 'production') {
+                await triggerFullReindex();
+            } else {
+                console.log('[SearchSync] Dev mode — skipping auto full-reindex on boot.');
+                console.log('[SearchSync] Run manually if needed: node src/scripts/fixSearchIndex.js');
+            }
+        };
+        await initSearch();
+
+        await scheduleRecurringJobs();
 
         await WishlistReminderService.sendWishlistReminders();
         // console.log('Wishlist reminders sent successfully');
@@ -92,6 +135,7 @@ app.use('/api/v1/explore', require('./src/routes/explore'));
 app.use('/api/v1/events', require('./src/routes/events'));
 app.use('/api/v1/referrals', require('./src/routes/referrals'));
 app.use('/api/v1/verification', require('./src/routes/verification'));
+app.use('/api/v1/search', require('./src/routes/search'));
 app.get('/p/:id', require('./src/controllers/productController').getProductSharePage);
 
 Sentry.setupExpressErrorHandler(app);

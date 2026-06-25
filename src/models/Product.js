@@ -42,6 +42,12 @@ const ProductSchema = new mongoose.Schema({
       default: 0
     }
   },
+  condition: {
+    type: String,
+    enum: ['new', 'used', 'refurbished'],
+    default: 'new',
+  },
+
   views: {
     total: {
       type: Number,
