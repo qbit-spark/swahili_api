@@ -116,7 +116,7 @@ exports.getAllProducts = async (req, res) => {
     const totalProducts = await Product.countDocuments(filter);
     const products = await Product.find(filter)
       .populate('category', 'name')
-      .populate('shop', 'name')
+      .populate('shop', 'name verificationStatus')
       .sort(sort)
       .limit(limit)
       .skip(skipIndex);
@@ -148,7 +148,7 @@ exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('category', 'name')
-      .populate('shop', 'name');
+      .populate('shop', 'name verificationStatus');
 
     if (!product) {
       return res.status(404).json({ success: false, errors: ['Product not found'], data: null });
@@ -299,7 +299,7 @@ exports.getProductSharePage = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category", "name")
-      .populate("shop", "name");
+      .populate("shop", "name verificationStatus");
 
     if (!product) {
       return res.status(404).send("Product not found");

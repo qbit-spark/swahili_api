@@ -152,6 +152,10 @@ const ShopSchema = new mongoose.Schema({
 
 });
 
+ShopSchema.virtual('verificationTier').get(function () {
+  return this.verificationStatus?.verificationTier ?? 'none';
+});
+
 ShopSchema.methods.creditReferralBalance = async function (amount) {
   this.wallet = this.wallet || { currentBalance: 0, lockedBalance: 0, referralBalance: 0, currency: 'TZS' };
   this.wallet.referralBalance = (this.wallet.referralBalance || 0) + amount;
@@ -160,10 +164,15 @@ ShopSchema.methods.creditReferralBalance = async function (amount) {
 };
 
 ShopSchema.set('toJSON', {
+  virtuals: true,
   transform: (doc, ret) => {
     delete ret.__v;
     return ret;
   }
+});
+
+ShopSchema.set('toObject', {
+  virtuals: true
 });
 
 // Update timestamp on save

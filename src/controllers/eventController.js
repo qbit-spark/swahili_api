@@ -97,6 +97,8 @@ exports.createEvent = async (req, res) => {
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
+const { enrichResponseItem } = require('../utils/shopResponse');
+
 /**
  * GET /api/v1/events
  * Public — paginated, filterable
@@ -122,7 +124,7 @@ exports.getAllEvents = async (req, res) => {
     const [events, total] = await Promise.all([
       Event.find(filter)
         .populate('seller',  'profile.firstName profile.lastName profile.avatar')
-        .populate('shop',    'name')
+        .populate('shop',    'name verificationStatus')
         .populate('category','name')
         .select('-rsvps -polls') // don't bloat list response
         .sort({ startsAt: 1 })
@@ -132,10 +134,12 @@ exports.getAllEvents = async (req, res) => {
       Event.countDocuments(filter),
     ]);
 
+    const normalizedEvents = await Promise.all(events.map((event) => enrichResponseItem(event)));
+
     res.json({
       success: true,
       data: {
-        events,
+        events: normalizedEvents,
         pagination: {
           currentPage: page,
           totalPages:  Math.ceil(total / limit),
@@ -159,7 +163,7 @@ exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('seller',  'profile.firstName profile.lastName profile.avatar')
-      .populate('shop',    'name')
+      .populate('shop',    'name verificationStatus')
       .populate('category','name');
 
     if (!event) {

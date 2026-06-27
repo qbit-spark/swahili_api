@@ -98,7 +98,7 @@ exports.getWithdrawals = async (req, res) => {
         }
 
         const withdrawals = await WithdrawalRequest.find(query)
-            .populate('shop', 'name')
+            .populate('shop', 'name verificationStatus')
             .populate('user', 'username email')
             .sort({ createdAt: -1 })
             .skip(skip)

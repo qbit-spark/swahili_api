@@ -2,6 +2,7 @@ const AMA = require('../models/Ama');
 const { uploadToCloudinary, deleteTempFile, cloudinary } = require('../config/cloudinary');
 const { parseImage } = require('../middleware/multer');
 const { emitAmaViewSignal, emitAmaQuestionSignal } = require('../queues/exploreQueue');
+const { enrichResponseItem } = require('../utils/shopResponse');
 
 const fireSignal = (fn) => fn().catch((e) => console.error('[AMASignal]', e.message));
 
@@ -61,7 +62,7 @@ exports.getAllAMAs = async (req, res) => {
     const [amas, total] = await Promise.all([
       AMA.find(filter)
         .populate('seller',  'profile.firstName profile.lastName profile.avatar')
-        .populate('shop',    'name')
+        .populate('shop',    'name verificationStatus')
         .populate('category','name')
         .select('-questions')
         .sort({ status: 1, scheduledFor: 1, createdAt: -1 })
@@ -71,9 +72,11 @@ exports.getAllAMAs = async (req, res) => {
       AMA.countDocuments(filter),
     ]);
 
+    const normalizedAmas = await Promise.all(amas.map((ama) => enrichResponseItem(ama)));
+
     res.json({
       success: true,
-      data: { amas, pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit } },
+      data: { amas: normalizedAmas, pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit } },
       errors: [],
     });
   } catch (err) {
@@ -85,7 +88,7 @@ exports.getAMAById = async (req, res) => {
   try {
     const ama = await AMA.findById(req.params.id)
       .populate('seller',  'profile.firstName profile.lastName profile.avatar')
-      .populate('shop',    'name')
+      .populate('shop',    'name verificationStatus')
       .populate('category','name')
       .populate('questions.askedBy', 'profile.firstName profile.lastName profile.avatar');
 

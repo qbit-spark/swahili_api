@@ -306,7 +306,7 @@ exports.getCategoryProducts = async (req, res) => {
     const order = req.query.order === 'asc' ? 1 : -1;
 
     const products = await Product.find({ category: req.params.id })
-      .populate('shop', 'name')
+      .populate('shop', 'name verificationStatus')
       .sort({ [sortBy]: order })
       .skip((page - 1) * limit)
       .limit(limit);

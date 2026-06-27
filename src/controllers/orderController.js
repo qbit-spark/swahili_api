@@ -211,7 +211,7 @@ exports.createOrder = async (req, res) => {
 
     // Fetch the complete order with populated fields for response
     const populatedOrder = await Order.findById(order._id)
-      .populate('shop', 'name')
+      .populate('shop', 'name verificationStatus')
       .populate('items.product', 'name image price');
 
     res.status(201).json({
@@ -266,7 +266,7 @@ exports.getOrderById = async (req, res) => {
       .populate('user', 'name email')
       .populate({
         path: 'shop',
-        select: 'name email owner'
+        select: 'name email owner verificationStatus'
       })
       .populate('items.product', 'name image price');
 
@@ -316,7 +316,7 @@ exports.getUserOrders = async (req, res) => {
     }
 
     const orders = await Order.find(query)
-      .populate('shop', 'name')
+      .populate('shop', 'name verificationStatus')
       .populate('items.product', 'name image price')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -362,7 +362,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     const order = await Order.findById(orderId)
-      .populate('shop', 'name owner')
+      .populate('shop', 'name owner verificationStatus')
       .populate('items.product', 'name image price')
       .populate('user', 'username email');
 
@@ -493,7 +493,7 @@ exports.updateOrderStatus = async (req, res) => {
       orderId,
       statusUpdate,
       { new: true }
-    ).populate('shop', 'name')
+    ).populate('shop', 'name verificationStatus')
       .populate('items.product', 'name image price')
       .populate('statusHistory.updatedBy', 'username');
 
@@ -646,7 +646,7 @@ exports.updatePaymentStatus = async (req, res) => {
 
     // Find the order
     const order = await Order.findById(orderId)
-      .populate('shop', 'name email')
+      .populate('shop', 'name email verificationStatus')
       .populate('user', 'name email');
 
     if (!order) {
@@ -677,7 +677,7 @@ exports.updatePaymentStatus = async (req, res) => {
       orderId,
       { $set: updateData },
       { new: true }
-    ).populate('shop', 'name')
+    ).populate('shop', 'name verificationStatus')
       .populate('items.product', 'name image price');
 
     // Send notification based on payment status

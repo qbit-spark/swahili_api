@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const { uploadToCloudinary, deleteTempFile, cloudinary } = require('../config/cloudinary');
 const { parseImage } = require('../middleware/multer');
 const { emitPostViewSignal, emitPostEngageSignal } = require('../queues/exploreQueue');
+const { enrichResponseItem } = require('../utils/shopResponse');
 
 const fireSignal = (fn) => fn().catch((e) => console.error('[PostSignal]', e.message));
 
@@ -72,7 +73,7 @@ exports.getAllPosts = async (req, res) => {
     const [posts, total] = await Promise.all([
       Post.find(filter)
         .populate('seller', 'profile.firstName profile.lastName profile.avatar')
-        .populate('shop', 'name')
+        .populate('shop', 'name verificationStatus')
         .populate('category', 'name')
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -81,9 +82,11 @@ exports.getAllPosts = async (req, res) => {
       Post.countDocuments(filter),
     ]);
 
+    const normalizedPosts = await Promise.all(posts.map((post) => enrichResponseItem(post)));
+
     res.json({
       success: true,
-      data: { posts, pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit } },
+      data: { posts: normalizedPosts, pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit } },
       errors: [],
     });
   } catch (err) {
@@ -95,7 +98,7 @@ exports.getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('seller', 'profile.firstName profile.lastName profile.avatar')
-      .populate('shop', 'name')
+      .populate('shop', 'name verificationStatus')
       .populate('category', 'name')
       .populate('taggedProducts', 'name price images');
 

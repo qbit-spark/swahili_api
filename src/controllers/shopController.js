@@ -2,6 +2,7 @@ const Shop = require('../models/Shop');
 const Product = require('../models/Product');
 const { User } = require('../models/User');
 const { uploadToCloudinary } = require('../config/cloudinary');
+const { ensureShopVerificationTier } = require('../utils/shopResponse');
 
 // Validation helper
 const validateShopInput = (data) => {
@@ -75,9 +76,11 @@ exports.createShop = async (req, res) => {
     // Update user's hasShop flag
     await User.findByIdAndUpdate(req.user.id, { hasShop: true });
 
+    const normalizedShop = await ensureShopVerificationTier(shop);
+
     res.status(201).json({
       success: true,
-      data: { shop },
+      data: { shop: normalizedShop },
       errors: []
     });
   } catch (err) {
@@ -91,49 +94,66 @@ exports.createShop = async (req, res) => {
 
 exports.getAllShops = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const sortBy = req.query.sortBy || 'createdAt';
-    const order = req.query.order === 'asc' ? 1 : -1;
-    const search = req.query.search || '';
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const sortBy = req.query.sortBy || "createdAt";
+    const order = req.query.order === "asc" ? 1 : -1;
+    const search = req.query.search || "";
     const category = req.query.category;
-    const status = req.query.status || 'active';
+    const status = req.query.status || "active";
 
     const query = {
       status,
-      name: { $regex: search, $options: 'i' }
+      name: {
+        $regex: search,
+        $options: "i",
+      },
     };
 
     if (category) {
       query.categories = category;
     }
 
-    const shops = await Shop.find(query)
-      .populate('owner', 'username email profile')
-      .populate('categories', 'name')
-      .sort({ [sortBy]: order })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    // Verified shops first, then sort by requested field.
+    const sort = {
+      "verificationStatus.isVerified": -1,
+      [sortBy]: order,
+    };
 
-    const total = await Shop.countDocuments(query);
+    const [shops, total] = await Promise.all([
+      Shop.find(query)
+        .populate("owner", "username email profile")
+        .populate("categories", "name")
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(limit),
 
-    res.json({
+      Shop.countDocuments(query),
+    ]);
+
+    const normalizedShops = await Promise.all(
+      shops.map((shop) => ensureShopVerificationTier(shop))
+    );
+
+    return res.status(200).json({
       success: true,
       data: {
-        shops,
+        shops: normalizedShops,
         pagination: {
           current: page,
           total: Math.ceil(total / limit),
-          totalRecords: total
-        }
+          totalRecords: total,
+        },
       },
-      errors: []
+      errors: [],
     });
   } catch (err) {
-    res.status(500).json({
+    console.error("Get shops error:", err);
+
+    return res.status(500).json({
       success: false,
       data: null,
-      errors: [err.message]
+      errors: [err.message],
     });
   }
 };
@@ -160,10 +180,12 @@ exports.getUserShop = async (req, res) => {
     // Update the shop object with real metrics
     shop.metrics.totalProducts = totalProducts;
     
+    const normalizedShop = await ensureShopVerificationTier(shop);
+
     return res.json({
       success: true,
       errors: [],
-      data: { shop }
+      data: { shop: normalizedShop }
     });
   } catch (error) {
     console.error('Get user shop error:', error);
@@ -189,9 +211,11 @@ exports.getShopById = async (req, res) => {
       });
     }
 
+    const normalizedShop = await ensureShopVerificationTier(shop);
+
     res.json({
       success: true,
-      data: { shop },
+      data: { shop: normalizedShop },
       errors: []
     });
   } catch (err) {
@@ -237,9 +261,11 @@ exports.updateShop = async (req, res) => {
       });
     }
 
+    const normalizedShop = await ensureShopVerificationTier(shop);
+
     res.json({
       success: true,
-      data: { shop },
+      data: { shop: normalizedShop },
       errors: []
     });
   } catch (err) {

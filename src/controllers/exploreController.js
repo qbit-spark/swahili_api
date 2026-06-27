@@ -10,6 +10,7 @@ const Product = require('../models/Product');
 const Post    = require('../models/Post');
 const Video   = require('../models/Video');
 const AMA     = require('../models/Ama');
+const { enrichResponseItem } = require('../utils/shopResponse');
 
 // ─── Cursor helpers ───────────────────────────────────────────────────────────
 // Cursor = base64("<score>_<id>") — opaque to the client, stable across re-ranks
@@ -89,7 +90,7 @@ const DB_FALLBACKS = {
       ];
     }
     return Product.find(q)
-      .populate('category', 'name').populate('shop', 'name')
+      .populate('category', 'name').populate('shop', 'name verificationStatus')
       .sort({ _exploreScore: -1, _id: 1 })
       .limit(limit).lean();
   },
@@ -102,7 +103,7 @@ const DB_FALLBACKS = {
       ];
     }
     return Post.find(q)
-      .populate('category', 'name').populate('shop', 'name')
+      .populate('category', 'name').populate('shop', 'name verificationStatus')
       .populate('seller', 'profile.firstName profile.lastName profile.avatar')
       .sort({ _exploreScore: -1, _id: 1 })
       .limit(limit).lean();
@@ -116,7 +117,7 @@ const DB_FALLBACKS = {
       ];
     }
     return Video.find(q)
-      .populate('category', 'name').populate('shop', 'name')
+      .populate('category', 'name').populate('shop', 'name verificationStatus')
       .populate('seller', 'profile.firstName profile.lastName profile.avatar')
       .sort({ _exploreScore: -1, _id: 1 })
       .limit(limit).lean();
@@ -137,7 +138,7 @@ const DB_FALLBACKS = {
       delete q.$or;
     }
     return AMA.find(q)
-      .populate('category', 'name').populate('shop', 'name')
+      .populate('category', 'name').populate('shop', 'name verificationStatus')
       .populate('seller', 'profile.firstName profile.lastName profile.avatar')
       .sort({ _exploreScore: -1, _id: 1 })
       .limit(limit).lean();
@@ -170,11 +171,12 @@ const handleTabFeed = async (req, res, opts) => {
     if (cached) {
       const feed = JSON.parse(cached);
       const { items, nextCursor, hasMore, total } = paginateFeed(feed, cursor, limit);
+      const normalizedItems = await Promise.all(items.map((item) => enrichResponseItem(item)));
 
       return res.json({
         success: true,
         data: {
-          feed: items,
+          feed: normalizedItems,
           pagination: { nextCursor, hasMore, total, limit },
           meta: { source: 'cache', personalized: !!userId, contentType: opts.contentType },
         },
@@ -190,10 +192,11 @@ const handleTabFeed = async (req, res, opts) => {
     const freshFeed = await waitForKey(cacheKey);
     if (freshFeed) {
       const { items, nextCursor, hasMore, total } = paginateFeed(freshFeed, cursor, limit);
+      const normalizedItems = await Promise.all(items.map((item) => enrichResponseItem(item)));
       return res.json({
         success: true,
         data: {
-          feed: items,
+          feed: normalizedItems,
           pagination: { nextCursor, hasMore, total, limit },
           meta: { source: 'freshly_built', personalized: !!userId, contentType: opts.contentType },
         },
@@ -208,15 +211,16 @@ const handleTabFeed = async (req, res, opts) => {
     const afterId    = decoded?.id    ?? null;
 
     const items = await DB_FALLBACKS[opts.contentType](limit, afterScore, afterId);
-    const hasMore = items.length === limit;
+    const normalizedItems = await Promise.all(items.map((item) => enrichResponseItem(item)));
+    const hasMore = normalizedItems.length === limit;
     const nextCursor = hasMore
-      ? encodeCursor(items[items.length - 1]._exploreScore, items[items.length - 1]._id.toString())
+      ? encodeCursor(normalizedItems[normalizedItems.length - 1]._exploreScore, normalizedItems[normalizedItems.length - 1]._id.toString())
       : null;
 
     return res.json({
       success: true,
       data: {
-        feed: items,
+        feed: normalizedItems,
         pagination: { nextCursor, hasMore, limit },
         meta: { source: 'fallback', personalized: false, contentType: opts.contentType },
       },

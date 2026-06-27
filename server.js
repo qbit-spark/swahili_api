@@ -137,7 +137,7 @@ app.use('/api/v1/referrals', require('./src/routes/referrals'));
 app.use('/api/v1/verification', require('./src/routes/verification'));
 app.use('/api/v1/search', require('./src/routes/search'));
 app.get('/p/:id', require('./src/controllers/productController').getProductSharePage);
-
+app.get('/r/:code', require('./src/controllers/referralLandingController').renderReferralLanding);
 Sentry.setupExpressErrorHandler(app);
 
 

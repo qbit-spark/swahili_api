@@ -2,6 +2,7 @@ const Video = require('../models/Video');
 const { uploadToCloudinary, deleteTempFile, cloudinary } = require('../config/cloudinary');
 const { parseVideo } = require('../middleware/multer');
 const { emitVideoViewSignal, emitVideoEngageSignal } = require('../queues/exploreQueue');
+const { enrichResponseItem } = require('../utils/shopResponse');
 
 const fireSignal = (fn) => fn().catch((e) => console.error('[VideoSignal]', e.message));
 
@@ -120,7 +121,7 @@ exports.getAllVideos = async (req, res) => {
     const [videos, total] = await Promise.all([
       Video.find(filter)
         .populate('seller', 'profile.firstName profile.lastName profile.avatar')
-        .populate('shop', 'name')
+        .populate('shop', 'name verificationStatus')
         .populate('category', 'name')
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -129,9 +130,11 @@ exports.getAllVideos = async (req, res) => {
       Video.countDocuments(filter),
     ]);
 
+    const normalizedVideos = await Promise.all(videos.map((video) => enrichResponseItem(video)));
+
     res.json({
       success: true,
-      data: { videos, pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit } },
+      data: { videos: normalizedVideos, pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit } },
       errors: [],
     });
   } catch (err) {
@@ -143,7 +146,7 @@ exports.getVideoById = async (req, res) => {
   try {
     const video = await Video.findById(req.params.id)
       .populate('seller', 'profile.firstName profile.lastName profile.avatar')
-      .populate('shop', 'name')
+      .populate('shop', 'name verificationStatus')
       .populate('category', 'name')
       .populate('taggedProducts', 'name price images');
 

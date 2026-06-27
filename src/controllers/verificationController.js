@@ -7,6 +7,7 @@ const Shop = require('../models/Shop');
 const { uploadToCloudinary, deleteTempFile, cloudinary } = require('../config/cloudinary');
 const { parseImage } = require('../middleware/multer');
 const { isAllowlistedForTier } = require('../config/verificationAllowlist');
+const { ensureShopVerificationTier } = require('../utils/shopResponse');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ const findOrCreateRecord = async (sellerId, shopId) => {
  * query or a join into SellerVerification.
  */
 const syncTierToShop = async (shopId, tier) => {
-    await Shop.findByIdAndUpdate(shopId, { verificationTier: tier });
+    await Shop.findByIdAndUpdate(shopId, { 'verificationStatus.verificationTier': tier });
 };
 
 exports.getMyStatus = async (req, res) => {
@@ -235,7 +236,7 @@ exports.getReviewQueue = async (req, res) => {
 
         const records = await SellerVerification.find({ 'applications.status': 'pending' })
             .populate('seller', 'username email profile.firstName profile.lastName')
-            .populate('shop', 'name')
+            .populate('shop', 'name verificationStatus')
             .lean();
 
         const queue = [];
@@ -260,11 +261,15 @@ exports.getReviewQueue = async (req, res) => {
 
         const skip = (page - 1) * limit;
         const total = queue.length;
+        const normalizedQueue = await Promise.all(queue.slice(skip, skip + limit).map(async (item) => ({
+            ...item,
+            shop: await ensureShopVerificationTier(item.shop),
+        })));
 
         res.json({
             success: true,
             data: {
-                queue: queue.slice(skip, skip + limit),
+                queue: normalizedQueue,
                 pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit },
             },
             errors: [],
@@ -346,7 +351,7 @@ exports.getSellerRecord = async (req, res) => {
     try {
         const record = await SellerVerification.findById(req.params.recordId)
             .populate('seller', 'username email profile')
-            .populate('shop', 'name')
+            .populate('shop', 'name verificationStatus')
             .populate('applications.reviewedBy', 'username');
 
         if (!record) {
